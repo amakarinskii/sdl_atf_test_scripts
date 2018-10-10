@@ -1,10 +1,5 @@
 ---------------------------------------------------------------------------------------------------
--- User story: Link to Github
--- Use case: Link to Github
---
--- Requirement summary:
--- Name(s) of requirement that is covered
--- Name(s) of additional non-functional requirement(s) if applicable
+-- User story: https://github.com/SmartDeviceLink/sdl_core/issues/2596
 --
 -- Description:
 -- Description of the particular CASE of requirement that is covered
@@ -14,8 +9,8 @@
 --
 -- Steps:
 --
--- Expected result:
--- Expected SDL behaviour
+-- Expected result: 
+-- SDL Defect:AppLink; Some vehicle data params are Disallowed after Master Reset even after policies update
 ---------------------------------------------------------------------------------------------------
 
 --[[ Required Shared libraries ]]
@@ -25,15 +20,10 @@ local common = require('user_modules/sequences/actions')
 --[[ Test Configuration ]]
 runner.testSettings.isSelfIncluded = false
 
---[[ Local Variables ]]
--- if not applicable remove this section
-
 --[[ Local Functions ]]
--- if not applicable remove this section
 local function testCase() 
-	
-end
 
+end
 
 --[[ Scenario ]]
 runner.Title("Preconditions")
