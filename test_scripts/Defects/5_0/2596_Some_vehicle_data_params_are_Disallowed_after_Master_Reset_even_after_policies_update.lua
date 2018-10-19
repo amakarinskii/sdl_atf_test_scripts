@@ -2,15 +2,11 @@
 -- User story: https://github.com/SmartDeviceLink/sdl_core/issues/2596
 --
 -- Description:
--- Description of the particular CASE of requirement that is covered
--- and conditions that will be used
---
--- Preconditions: (if applicable)
---
--- Steps:
+-- Some vehicle data params are Disallowed after Master Reset even after policies update (1586634)
 --
 -- Expected result: 
--- SDL Defect:AppLink; Some vehicle data params are Disallowed after Master Reset even after policies update
+-- SDL Defect:AppLink; Some vehicle data params are Disallowed after Master Reset even after 
+-- policies update
 ---------------------------------------------------------------------------------------------------
 
 --[[ Required Shared libraries ]]
