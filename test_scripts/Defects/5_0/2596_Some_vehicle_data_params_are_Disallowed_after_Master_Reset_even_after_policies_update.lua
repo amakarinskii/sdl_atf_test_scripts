@@ -4,9 +4,29 @@
 -- Description:
 -- Some vehicle data params are Disallowed after Master Reset even after policies update (1586634)
 --
--- Expected result: 
--- SDL Defect:AppLink; Some vehicle data params are Disallowed after Master Reset even after 
--- policies update
+-- Preconditions:
+-- 1) Clear environment
+-- 2) SDL started, HMI and Mobile connected
+-- 3) Application registered and activated
+-- 
+-- Steps:
+-- 1) send "GetVehicleData" and recieve resultCode = "DISALLOWED"
+-- 2) policy table update
+-- 3) send "GetVehicleData" and recieve resultCode = "SUCCESS"
+-- 4) send BC.OnExitAllApplications with reason = "MASTER_RESET"
+-- 5) clean mobile session
+-- 6) Start SDL, HMI, mobile session
+-- 7) register app
+-- 8) activate app
+-- 9) send "GetVehicleData" and recieve resultCode = "DISALLOWED"
+-- 10) policy table update
+-- 11) send "GetVehicleData" and recieve resultCode = "SUCCESS"
+-- 
+-- Postconditions:
+-- Stop SDL and restore INI params
+--
+-- Expected: 
+-- Vehicle data params are allowed after each PTU.
 ---------------------------------------------------------------------------------------------------
 
 --[[ Required Shared libraries ]]
