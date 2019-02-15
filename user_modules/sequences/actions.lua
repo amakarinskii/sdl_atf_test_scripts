@@ -2,6 +2,9 @@
 -- Common actions module
 ---------------------------------------------------------------------------------------------------
 --[[ Required Shared libraries ]]
+local mobile = require("mobile_connection")
+local tcp = require("tcp_connection")
+local file_connection = require("file_connection")
 local mobileSession = require("mobile_session")
 local json = require("modules/json")
 local commonFunctions = require("user_modules/shared_testcases/commonFunctions")
@@ -14,7 +17,16 @@ local reporter = require("reporter")
 local utils = require("user_modules/utils")
 
 --[[ Module ]]
-local m = {}
+local m = {
+  init = {},
+  mobile = {},
+  hmi = {},
+  ptu = {},
+  app = {},
+  run = {},
+  sdl = {}
+}
+
 
 --[[ Constants ]]
 m.minTimeout = 500
@@ -23,9 +35,55 @@ m.minTimeout = 500
 local hmiAppIds = {}
 local originalValuesInSDLIni = {}
 
+test.mobileConnections = {}
 test.mobileSession = {}
 
 --[[ Functions ]]
+
+local function MobRaiseEvent(self, pEvent, pEventName)
+  if pEventName == nil then pEventName = "noname" end
+    reporter.AddMessage(debug.getinfo(1, "n").name, pEventName)
+    event_dispatcher:RaiseEvent(self, pEvent)
+end
+
+local function MobExpectEvent(self, pEvent, pEventName)
+  if pEventName == nil then pEventName = "noname" end
+  local ret = expectations.Expectation(pEventName, self)
+  ret.event = pEvent
+  event_dispatcher:AddEvent(self, pEvent, ret)
+  test:AddExpectation(ret)
+  return ret
+end
+
+local function prepareMobileConnectionsTable()
+  if test.mobileConnection then
+    if test.mobileConnection.connection then
+      local defaultMobileConnection = test.mobileConnection
+      defaultMobileConnection.RaiseEvent = MobRaiseEvent
+      defaultMobileConnection.ExpectEvent = MobExpectEvent
+      test.mobileConnections[1] = defaultMobileConnection
+    end
+  end
+end
+
+prepareMobileConnectionsTable()
+
+local function getDefaultMobSessionConfig()
+  local mobSesionConfig = {
+    activateHeartbeat = false,
+    sendHeartbeatToSDL = false,
+    answerHeartbeatFromSDL = false,
+    ignoreSDLHeartBeatACK = false
+  }
+
+  if config.defaultProtocolVersion > 2 then
+    mobSesionConfig.activateHeartbeat = true
+    mobSesionConfig.sendHeartbeatToSDL = true
+    mobSesionConfig.answerHeartbeatFromSDL = true
+    mobSesionConfig.ignoreSDLHeartBeatACK = true
+  end
+  return mobSesionConfig
+end
 
 --[[ @getPTUFromPTS: create policy table update table (PTU)
 --! @parameters:
@@ -64,68 +122,246 @@ local function getPTUFromPTS()
   return pTbl
 end
 
---[[ @getAppDataForPTU: provide application data for PTU
+--[[ Functions of run submodule ]]
+
+function m.run.createEvent()
+  local event = events.Event()
+  event.matches = function(e1, e2) return e1 == e2 end
+  return event
+end
+
+function m.run.runAfter(pFunc, pTimeOut)
+  RUN_AFTER(pFunc, pTimeOut)
+end
+
+--[[ @wait: delay test step for specific timeout
 --! @parameters:
---! pAppId - application number (1, 2, etc.)
+--! pTimeOut - time to wait in ms
 --! @return: none
 --]]
-function m.getAppDataForPTU(pAppId)
+function m.run.wait(pTimeOut)
+  if not pTimeOut then pTimeOut = m.timeout end
+  local event = m.run.createEvent()
+  m.hmi.getConnection():ExpectEvent(event, "Delayed event"):Timeout(pTimeOut + 60000)
+  m.run.runAfter(function() m.hmi.getConnection():RaiseEvent(event, "Delayed event") end, pTimeOut)
+end
+
+--[[ Functions of init submodule ]]
+
+function m.init.SDL()
+  test:runSDL()
+  local ret = commonFunctions:waitForSDLStart(test)
+  ret:Do(function()
+      utils.cprint(35, "SDL started")
+    end)
+  return ret
+end
+
+function m.init.HMI()
+  local ret = test:initHMI()
+  ret:Do(function()
+      utils.cprint(35, "HMI initialized")
+    end)
+  return ret
+end
+
+function m.init.HMI_onReady()
+  local ret = test:initHMI_onReady()
+  ret:Do(function()
+      utils.cprint(35, "HMI is ready")
+    end)
+  return ret
+end
+
+function m.init.connectMobile()
+  return m.mobile.connect()
+end
+
+function m.init.allowSDL()
+  local ret = m.mobile.allowSDL()
+  ret:Do(function()
+      utils.cprint(35, "SDL allowed")
+    end)
+  return ret
+end
+
+--[[ Functions of hmi submodule ]]
+
+function m.hmi.getConnection()
+  return test.hmiConnection
+end
+
+--[[ Functions of mobile submodule ]]
+
+function m.mobile.createConnection(pMobConnId, pMobConnHost, pMobConnPort)
+  if pMobConnId == nil then pMobConnId = 1 end
+  local filename = "mobile" .. pMobConnId .. ".out"
+  local tcpConnection = tcp.Connection(pMobConnHost, pMobConnPort)
+  local fileConnection = file_connection.FileConnection(filename, tcpConnection)
+  local connection = mobile.MobileConnection(fileConnection)
+  connection.RaiseEvent = MobRaiseEvent
+  connection.ExpectEvent = MobExpectEvent
+  connection.host = pMobConnHost
+  connection.port = pMobConnPort
+  event_dispatcher:AddConnection(connection)
+  test.mobileConnections[pMobConnId] = connection
+end
+
+function m.mobile.connect(pMobConnId)
+  if pMobConnId == nil then pMobConnId = 1 end
+  local connection = m.mobile.getConnection(pMobConnId)
+
+  connection:ExpectEvent(events.disconnectedEvent, "Disconnected")
+  :Pin()
+  :Times(AnyNumber())
+  :Do(function()
+      utils.cprint(35, "Mobile #" .. pMobConnId .. " disconnected")
+    end)
+
+  local ret = connection:ExpectEvent(events.connectedEvent, "Connected")
+  ret:Do(function()
+    utils.cprint(35, "Mobile #" .. pMobConnId .. " connected")
+  end)
+  connection:Connect()
+  return ret
+end
+
+function m.mobile.disconnect(pMobConnId)
+  if pMobConnId == nil then pMobConnId = 1 end
+  local connection = m.mobile.getConnection(pMobConnId)
+  local sessions = m.mobile.getApps(pMobConnId)
+  for _, id in ipairs(sessions) do
+    m.mobile.deleteSession(id)
+  end
+  -- remove pinned mobile disconnect expectation
+  connection:Close()
+end
+
+function m.mobile.deleteConnection(pMobConnId)
+  if pMobConnId == nil then pMobConnId = 1 end
+  local connection = m.mobile.getConnection(pMobConnId)
+  event_dispatcher:DeleteConnection(connection)
+  test.mobileConnections[pMobConnId] = nil
+end
+
+function m.mobile.getConnection(pMobConnId)
+  if pMobConnId == nil then pMobConnId = 1 end
+  return test.mobileConnections[pMobConnId]
+end
+
+function m.mobile.allowSDL(pMobConnId)
+  if pMobConnId == nil then pMobConnId = 1 end
+  local connection = m.mobile.getConnection(pMobConnId)
+  local event = m.run.createEvent()
+  m.hmi.getConnection():SendNotification("SDL.OnAllowSDLFunctionality", {
+    allowed = true,
+    source = "GUI",
+    device = {
+      id = utils.getDeviceMAC(connection.host, connection.port),
+      name = utils.getDeviceName(connection.host, connection.port)
+    }
+  })
+  m.run.runAfter(function() m.hmi.getConnection():RaiseEvent(event, "Allow SDL event") end, 100)
+  return m.hmi.getConnection():ExpectEvent(event, "Allow SDL event")
+end
+
+function m.mobile.getSession(pAppId)
+  if pAppId == nil then pAppId = 1 end
+  return test.mobileSession[pAppId]
+end
+
+function m.mobile.createSession(pAppId, pMobConnId, pMobSesionConfig)
+  if pAppId == nil then pAppId = 1 end
+  if pMobConnId == nil then pMobConnId = 1 end
+  if pMobSesionConfig == nil then pMobSesionConfig = getDefaultMobSessionConfig() end
+
+  local session = mobileSession.MobileSession(test, test.mobileConnections[pMobConnId])
+  for k, v in pairs(pMobSesionConfig) do
+    session[k] = v
+  end
+
+  test.mobileSession[pAppId] = session
+  return session
+end
+
+function m.mobile.deleteSession(pAppId)
+  if pAppId == nil then pAppId = 1 end
+  m.mobile.getSession(pAppId):Stop()
+  :Do(function()
+      test.mobileSession[pAppId] = nil
+    end)
+end
+
+function m.mobile.getApps(pMobConnId)
+  if pMobConnId == nil then
+    return utils.cloneTable(test.mobileSession)
+  end
+
+  local mobileSessions = {}
+  for _, mobileSession in ipairs(test.mobileSession) do
+    if mobileSession.connection == test.mobileConnections[pMobConnId] then
+      table.insert(mobileSessions, mobileSession)
+    end
+  end
+  return mobileSessions
+end
+
+function m.mobile.getAppsCount(pMobConnId)
+ return #m.mobile.getApps(pMobConnId)
+end
+
+--[[ Functions of ptu submodule ]]
+
+function m.ptu.getAppData(pAppId)
   return {
     keep_context = false,
     steal_focus = false,
     priority = "NONE",
     default_hmi = "NONE",
     groups = { "Base-4", "Location-1" },
-    AppHMIType = m.getConfigAppParams(pAppId).appHMIType
+    AppHMIType = m.app.getParams(pAppId).appHMIType
   }
 end
 
---[[ @policyTableUpdate: perform PTU
---! @parameters:
---! pPTUpdateFunc - function with additional updates (optional)
---! pExpNotificationFunc - function with specific expectations (optional)
---! @return: none
---]]
-function m.policyTableUpdate(pPTUpdateFunc, pExpNotificationFunc)
+function m.ptu.policyTableUpdate(pPTUpdateFunc, pExpNotificationFunc)
   if pExpNotificationFunc then
     pExpNotificationFunc()
   end
   local ptsFileName = commonFunctions:read_parameter_from_smart_device_link_ini("SystemFilesPath") .. "/"
     .. commonFunctions:read_parameter_from_smart_device_link_ini("PathToSnapshot")
   local ptuFileName = os.tmpname()
-  local requestId = m.getHMIConnection():SendRequest("SDL.GetURLS", { service = 7 })
-  m.getHMIConnection():ExpectResponse(requestId)
+  local requestId = m.hmi.getConnection():SendRequest("SDL.GetURLS", { service = 7 })
+  m.hmi.getConnection():ExpectResponse(requestId)
   :Do(function()
-      m.getHMIConnection():SendNotification("BasicCommunication.OnSystemRequest",
+      m.hmi.getConnection():SendNotification("BasicCommunication.OnSystemRequest",
         { requestType = "PROPRIETARY", fileName = ptsFileName })
       local ptuTable = getPTUFromPTS()
-      for i = 1, m.getAppsCount() do
-        ptuTable.policy_table.app_policies[m.getConfigAppParams(i).fullAppID] = m.getAppDataForPTU(i)
+      for i = 1, m.mobile.getAppsCount() do
+        ptuTable.policy_table.app_policies[m.app.getParams(i).fullAppID] = m.ptu.getAppData(i)
       end
       if pPTUpdateFunc then
         pPTUpdateFunc(ptuTable)
       end
       utils.tableToJsonFile(ptuTable, ptuFileName)
-      local event = events.Event()
-      event.matches = function(e1, e2) return e1 == e2 end
-      m.getHMIConnection():ExpectEvent(event, "PTU event")
-      for id = 1, m.getAppsCount() do
-        m.getMobileSession(id):ExpectNotification("OnSystemRequest", { requestType = "PROPRIETARY" })
+      local event = m.run.createEvent()
+      m.hmi.getConnection():ExpectEvent(event, "PTU event")
+      for id = 1, m.mobile.getAppsCount() do
+        m.mobile.getSession(id):ExpectNotification("OnSystemRequest", { requestType = "PROPRIETARY" })
         :Do(function()
             if not pExpNotificationFunc then
-               m.getHMIConnection():ExpectRequest("VehicleInfo.GetVehicleData", { odometer = true })
-               m.getHMIConnection():ExpectNotification("SDL.OnStatusUpdate", { status = "UP_TO_DATE" })
+               m.hmi.getConnection():ExpectRequest("VehicleInfo.GetVehicleData", { odometer = true })
+               m.hmi.getConnection():ExpectNotification("SDL.OnStatusUpdate", { status = "UP_TO_DATE" })
             end
             utils.cprint(35, "App ".. id .. " was used for PTU")
-            m.getHMIConnection():RaiseEvent(event, "PTU event")
-            local corIdSystemRequest = m.getMobileSession(id):SendRPC("SystemRequest", {
+            m.hmi.getConnection():RaiseEvent(event, "PTU event")
+            local corIdSystemRequest = m.mobile.getSession(id):SendRPC("SystemRequest", {
               requestType = "PROPRIETARY" }, ptuFileName)
-            m.getHMIConnection():ExpectRequest("BasicCommunication.SystemRequest")
+            m.hmi.getConnection():ExpectRequest("BasicCommunication.SystemRequest")
             :Do(function(_, d3)
-                m.getHMIConnection():SendResponse(d3.id, "BasicCommunication.SystemRequest", "SUCCESS", { })
-                m.getHMIConnection():SendNotification("SDL.OnReceivedPolicyUpdate", { policyfile = d3.params.fileName })
+                m.hmi.getConnection():SendResponse(d3.id, "BasicCommunication.SystemRequest", "SUCCESS", { })
+                m.hmi.getConnection():SendNotification("SDL.OnReceivedPolicyUpdate", { policyfile = d3.params.fileName })
               end)
-            m.getMobileSession(id):ExpectResponse(corIdSystemRequest, { success = true, resultCode = "SUCCESS" })
+            m.mobile.getSession(id):ExpectResponse(corIdSystemRequest, { success = true, resultCode = "SUCCESS" })
             :Do(function() os.remove(ptuFileName) end)
           end)
         :Times(AtMost(1))
@@ -133,175 +369,131 @@ function m.policyTableUpdate(pPTUpdateFunc, pExpNotificationFunc)
     end)
 end
 
---[[ @allowSDL: allow SDL functionality for default device
---! @parameters: none
---! @return: none
---]]
-local function allowSDL(self)
-  self.hmiConnection:SendNotification("SDL.OnAllowSDLFunctionality", {
-    allowed = true,
-    source = "GUI",
-    device = {
-      id = utils.getDeviceMAC(),
-      name = utils.getDeviceName()
-    }
-  })
-end
+--[[ Functions of app submodule ]]
 
---[[ @getConfigAppParams: return app's configuration from defined in config file
---! @parameters:
---! pAppId - application number (1, 2, etc.)
---! @return: application identifier from configuration file
---]]
-function m.getConfigAppParams(pAppId)
+local function registerApp(pAppId, pMobConnId, hasPTU)
   if not pAppId then pAppId = 1 end
-  return config["application" .. pAppId].registerAppInterfaceParams
-end
-
---[[ @preconditions: precondition steps
---! @parameters: none
---! @return: none
---]]
-function m.preconditions()
-  commonFunctions:SDLForceStop()
-  commonSteps:DeletePolicyTable()
-  commonSteps:DeleteLogsFiles()
-end
-
---[[ @activateApp: activate application
---! @parameters:
---! pAppId - application number (1, 2, etc.)
---! @return: none
---]]
-function m.activateApp(pAppId)
-  if not pAppId then pAppId = 1 end
-  local requestId = m.getHMIConnection():SendRequest("SDL.ActivateApp", { appID = m.getHMIAppId(pAppId) })
-  m.getHMIConnection():ExpectResponse(requestId)
-  local params = m.getConfigAppParams(pAppId)
-  local audioStreamingState = "NOT_AUDIBLE"
-  if params.isMediaApplication or 
-      commonFunctions:table_contains(params.appHMIType, "NAVIGATION") or 
-      commonFunctions:table_contains(params.appHMIType, "COMMUNICATION") then
-    audioStreamingState = "AUDIBLE"
-  end
-  m.getMobileSession(pAppId):ExpectNotification("OnHMIStatus",
-    { hmiLevel = "FULL", audioStreamingState = audioStreamingState, systemContext = "MAIN" })
-  utils.wait()
-end
-
---[[ @getHMIAppId: get HMI application identifier
---! @parameters:
---! pAppId - application number (1, 2, etc.)
---! @return: application identifier
---]]
-function m.getHMIAppId(pAppId)
-  if not pAppId then pAppId = 1 end
-  return hmiAppIds[m.getConfigAppParams(pAppId).fullAppID]
-end
-
---[[ @getMobileSession: get mobile session
---! @parameters:
---! pAppId - application number (1, 2, etc.)
---! @return: mobile session object
---]]
-function m.getMobileSession(pAppId)
-  if not pAppId then pAppId = 1 end
-  local session
-  if not test.mobileSession[pAppId] then
-    session = mobileSession.MobileSession(test, test.mobileConnection)
-    test.mobileSession[pAppId] = session
-    if config.defaultProtocolVersion > 2 then
-      session.activateHeartbeat = true
-      session.sendHeartbeatToSDL = true
-      session.answerHeartbeatFromSDL = true
-      session.ignoreSDLHeartBeatACK = true
-    end
-  else
-    session = test.mobileSession[pAppId]
-  end
-  return session
-end
-
---[[ @registerApp: register mobile application
---! @parameters:
---! pAppId - application number (1, 2, etc.)
---! @return: none
---]]
-function m.registerApp(pAppId)
-  if not pAppId then pAppId = 1 end
-  m.getMobileSession(pAppId):StartService(7)
+  if not pMobConnId then pMobConnId = 1 end
+  local session = m.mobile.createSession(pAppId, pMobConnId)
+  session:StartService(7)
   :Do(function()
-      local corId = m.getMobileSession(pAppId):SendRPC("RegisterAppInterface", m.getConfigAppParams(pAppId))
-      m.getHMIConnection():ExpectNotification("BasicCommunication.OnAppRegistered",
-        { application = { appName = m.getConfigAppParams(pAppId).appName } })
+      local corId = session:SendRPC("RegisterAppInterface", m.app.getParams(pAppId))
+      m.hmi.getConnection():ExpectNotification("BasicCommunication.OnAppRegistered",
+        { application = { appName = m.app.getParams(pAppId).appName } })
       :Do(function(_, d1)
-          m.setHMIAppId(d1.params.application.appID, pAppId)
-          m.getHMIConnection():ExpectRequest("BasicCommunication.PolicyUpdate")
-          :Do(function(_, d2)
-              m.getHMIConnection():SendResponse(d2.id, d2.method, "SUCCESS", { })
-            end)
+          m.app.setHMIId(d1.params.application.appID, pAppId)
+          if hasPTU then
+            m.hmi.getConnection():ExpectRequest("BasicCommunication.PolicyUpdate")
+              :Do(function(_, d2)
+                m.hmi.getConnection():SendResponse(d2.id, d2.method, "SUCCESS", { })
+              end)
+          end
         end)
-      m.getMobileSession(pAppId):ExpectResponse(corId, { success = true, resultCode = "SUCCESS" })
+      session:ExpectResponse(corId, { success = true, resultCode = "SUCCESS" })
       :Do(function()
-          m.getMobileSession(pAppId):ExpectNotification("OnHMIStatus",
+          session:ExpectNotification("OnHMIStatus",
             { hmiLevel = "NONE", audioStreamingState = "NOT_AUDIBLE", systemContext = "MAIN" })
-          m.getMobileSession(pAppId):ExpectNotification("OnPermissionsChange")
+          session:ExpectNotification("OnPermissionsChange")
           :Times(AnyNumber())
         end)
     end)
 end
 
---[[ @registerAppWOPTU: register mobile application and do not perform PTU
---! @parameters:
---! pAppId - application number (1, 2, etc.)
---! @return: none
---]]
-function m.registerAppWOPTU(pAppId)
+function m.app.register(pAppId, pMobConnId)
+  registerApp(pAppId, pMobConnId, true)
+end
+
+function m.app.registerNoPTU(pAppId, pMobConnId)
+  registerApp(pAppId, pMobConnId, false)
+end
+
+function m.app.activate(pAppId)
   if not pAppId then pAppId = 1 end
-  m.getMobileSession(pAppId):StartService(7)
+  local requestId = m.hmi.getConnection():SendRequest("SDL.ActivateApp", { appID = m.app.getHMIId(pAppId) })
+  m.hmi.getConnection():ExpectResponse(requestId)
+  local params = m.app.getParams(pAppId)
+  local audioStreamingState = "NOT_AUDIBLE"
+  if params.isMediaApplication or
+      commonFunctions:table_contains(params.appHMIType, "NAVIGATION") or
+      commonFunctions:table_contains(params.appHMIType, "COMMUNICATION") then
+    audioStreamingState = "AUDIBLE"
+  end
+  m.mobile.getSession(pAppId):ExpectNotification("OnHMIStatus",
+    { hmiLevel = "FULL", audioStreamingState = audioStreamingState, systemContext = "MAIN" })
+  m.run.wait()
+end
+
+function m.app.unRegister(pAppId)
+  if pAppId == nil then pAppId = 1 end
+  local session = m.mobile.getSession(pAppId)
+  local cid = session:SendRPC("UnregisterAppInterface", {})
+  session:ExpectResponse(cid, { success = true, resultCode = "SUCCESS" })
   :Do(function()
-      local corId = m.getMobileSession(pAppId):SendRPC("RegisterAppInterface", m.getConfigAppParams(pAppId))
-      m.getHMIConnection():ExpectNotification("BasicCommunication.OnAppRegistered",
-        { application = { appName = m.getConfigAppParams(pAppId).appName } })
-      :Do(function(_, d1)
-          hmiAppIds[m.getConfigAppParams(pAppId).fullAppID] = d1.params.application.appID
-        end)
-      m.getMobileSession(pAppId):ExpectResponse(corId, { success = true, resultCode = "SUCCESS" })
-      :Do(function()
-          m.getMobileSession(pAppId):ExpectNotification("OnHMIStatus",
-            { hmiLevel = "NONE", audioStreamingState = "NOT_AUDIBLE", systemContext = "MAIN" })
-          m.getMobileSession(pAppId):ExpectNotification("OnPermissionsChange")
-        end)
+      m.mobile.deleteSession(pAppId)
+    end)
+  m.hmi.getConnection():ExpectNotification("BasicCommunication.OnAppUnregistered",
+    { unexpectedDisconnect = false, appID = m.app.getHMIId(pAppId) })
+  :Do(function()
+      m.app.setHMIId(nil, pAppId)
     end)
 end
 
---[[ @start: starting sequence: starting of SDL, initialization of HMI, connect mobile
+function m.app.getParams(pAppId)
+  if not pAppId then pAppId = 1 end
+  return config["application" .. pAppId].registerAppInterfaceParams
+end
+
+function m.app.getHMIIds()
+  return hmiAppIds
+end
+
+function m.app.getHMIId(pAppId)
+  if not pAppId then pAppId = 1 end
+  return hmiAppIds[m.app.getParams(pAppId).fullAppID]
+end
+
+function m.app.setHMIId(pHMIAppId, pAppId)
+  if not pAppId then pAppId = 1 end
+  hmiAppIds[m.app.getParams(pAppId).fullAppID] = pHMIAppId
+end
+
+function m.app.deleteHMIId(pAppId)
+  hmiAppIds[m.app.getParams(pAppId).fullAppID] = nil
+end
+
+--[[ Functions of sdl submodule ]]
+
+function m.sdl.getPathToFileInStorage(pFileName, pAppId)
+  if not pAppId then pAppId = 1 end
+  return commonPreconditions:GetPathToSDL() .. "storage/" .. m.app.getParams( pAppId ).fullAppID .. "_"
+    .. utils.getDeviceMAC() .. "/" .. pFileName
+end
+
+--[[ @setSDLConfigParameter: change original value of parameter in SDL .ini file
 --! @parameters:
---! pHMIParams - table with parameters for HMI initialization
+--! pParamName - name of the parameter
+--! pParamValue - value to be set
 --! @return: none
 --]]
-function m.start(pHMIParams)
-  local event = events.Event()
-  event.matches = function(e1, e2) return e1 == e2 end
-  test:runSDL()
-  commonFunctions:waitForSDLStart(test)
-  :Do(function()
-      test:initHMI()
-      :Do(function()
-          utils.cprint(35, "HMI initialized")
-          test:initHMI_onReady(pHMIParams)
-          :Do(function()
-              utils.cprint(35, "HMI is ready")
-              test:connectMobile()
-              :Do(function()
-                  utils.cprint(35, "Mobile connected")
-                  allowSDL(test)
-                  m.getHMIConnection():RaiseEvent(event, "Start event")
-                end)
-            end)
-        end)
-    end)
-  return m.getHMIConnection():ExpectEvent(event, "Start event")
+function m.sdl.setSDLIniParameter(pParamName, pParamValue)
+  originalValuesInSDLIni[pParamName] = commonFunctions:read_parameter_from_smart_device_link_ini(pParamName)
+  commonFunctions:write_parameter_to_smart_device_link_ini(pParamName, pParamValue)
+end
+
+--[[ @restoreSDLConfigParameters: restore original values of parameters in SDL .ini file
+--! @parameters: none
+--! @return: none
+--]]
+function m.sdl.restoreSDLIniParameters()
+  for pParamName, pParamValue in pairs(originalValuesInSDLIni) do
+    commonFunctions:write_parameter_to_smart_device_link_ini(pParamName, pParamValue)
+  end
+end
+
+--[[ Functions of ATF extension ]]
+
+function event_dispatcher:DeleteConnection(connection)
+  --ToDo: Implement
 end
 
 --[[ @ExpectRequest: register expectation for request on HMI connection
@@ -415,56 +607,85 @@ function test.hmiConnection:ExpectEvent(pEvent, pEventName)
   return ret
 end
 
-function test.mobileConnection:RaiseEvent(pEvent, pEventName)
-  if pEventName == nil then pEventName = "noname" end
-    reporter.AddMessage(debug.getinfo(1, "n").name, pEventName)
-    event_dispatcher:RaiseEvent(self, pEvent)
-end
+--[[ Functions to support backward compatibility with old scripts ]]
 
-function test.mobileConnection:ExpectEvent(pEvent, pEventName)
-  if pEventName == nil then pEventName = "noname" end
-  local ret = expectations.Expectation(pEventName, self)
-  ret.event = pEvent
-  event_dispatcher:AddEvent(self, pEvent, ret)
-  test:AddExpectation(ret)
-  return ret
-end
-
---[[ @getMobileConnection: return Mobile connection object
---! @parameters: none
---! @return: Mobile connection object
---]]
-function m.getMobileConnection()
-  return test.mobileConnection
-end
-
---[[ @getHMIConnection: return HMI connection object
---! @parameters: none
---! @return: HMI connection object
---]]
-function m.getHMIConnection()
-  return test.hmiConnection
-end
-
---[[ @setSDLConfigParameter: change original value of parameter in SDL .ini file
+--[[ @getConfigAppParams: return app's configuration from defined in config file
 --! @parameters:
---! pParamName - name of the parameter
---! pParamValue - value to be set
+--! pAppId - application number (1, 2, etc.)
+--! @return: application identifier from configuration file
+--]]
+m.getConfigAppParams = m.app.getParams
+
+--[[ @getAppDataForPTU: provide application data for PTU
+--! @parameters:
+--! pAppId - application number (1, 2, etc.)
 --! @return: none
 --]]
-function m.setSDLIniParameter(pParamName, pParamValue)
-  originalValuesInSDLIni[pParamName] = commonFunctions:read_parameter_from_smart_device_link_ini(pParamName)
-  commonFunctions:write_parameter_to_smart_device_link_ini(pParamName, pParamValue)
+m.getAppDataForPTU = m.ptu.getAppData
+
+--[[ @policyTableUpdate: perform PTU
+--! @parameters:
+--! pPTUpdateFunc - function with additional updates (optional)
+--! pExpNotificationFunc - function with specific expectations (optional)
+--! @return: none
+--]]
+m.policyTableUpdate = m.ptu.policyTableUpdate
+
+--[[ @registerApp: register mobile application
+--! @parameters:
+--! pAppId - application number (1, 2, etc.)
+--! @return: none
+--]]
+m.registerApp = m.app.register
+
+--[[ @registerAppWOPTU: register mobile application and do not perform PTU
+--! @parameters:
+--! pAppId - application number (1, 2, etc.)
+--! @return: none
+--]]
+m.registerAppWOPTU = m.app.registerNoPTU
+
+--[[ @activateApp: activate application
+--! @parameters:
+--! pAppId - application number (1, 2, etc.)
+--! @return: none
+--]]
+m.activateApp = m.app.activate
+
+--[[ @start: starting sequence: starting of SDL, initialization of HMI, connect mobile
+--! @parameters:
+--! pHMIParams - table with parameters for HMI initialization
+--! @return: Start event expectation
+--]]
+function m.start(pHMIParams)
+  local event = m.run.createEvent()
+  m.init.SDL()
+  :Do(function()
+      m.init.HMI()
+      :Do(function()
+          m.init.HMI_onReady()
+          :Do(function()
+              m.init.connectMobile()
+              :Do(function()
+                  m.init.allowSDL()
+                  :Do(function()
+                      m.hmi.getConnection():RaiseEvent(event, "Start event")
+                    end)
+                end)
+            end)
+        end)
+    end)
+  return m.hmi.getConnection():ExpectEvent(event, "Start event")
 end
 
---[[ @restoreSDLConfigParameters: restore original values of parameters in SDL .ini file
+--[[ @preconditions: precondition steps
 --! @parameters: none
 --! @return: none
 --]]
-function m.restoreSDLIniParameters()
-  for pParamName, pParamValue in pairs(originalValuesInSDLIni) do
-    commonFunctions:write_parameter_to_smart_device_link_ini(pParamName, pParamValue)
-  end
+function m.preconditions()
+  commonFunctions:SDLForceStop()
+  commonSteps:DeletePolicyTable()
+  commonSteps:DeleteLogsFiles()
 end
 
 --[[ @postconditions: postcondition steps
@@ -473,28 +694,47 @@ end
 --]]
 function m.postconditions()
   StopSDL()
-  m.restoreSDLIniParameters()
+  m.sdl.restoreSDLIniParameters()
 end
+
+--[[ @getMobileSession: get mobile session
+--! @parameters:
+--! pAppId - application number (1, 2, etc.)
+--! @return: mobile session object
+--]]
+function m.getMobileSession(pAppId, pMobConnId)
+  if not pAppId then pAppId = 1 end
+  local session = m.mobile.getSession(pAppId)
+  if not session then
+    session = m.mobile.createSession(pAppId, pMobConnId)
+  end
+  return session
+end
+
+--[[ @getMobileConnection: return Mobile connection object
+--! @parameters: none
+--! @return: Mobile connection object
+--]]
+m.getMobileConnection = m.mobile.getConnection
 
 --[[ @getAppsCount: provide count of registered applications
 --! @parameters: none
 --! @return: count of apps
 --]]
-function m.getAppsCount()
-  return #test.mobileSession
-end
+m.getAppsCount = m.mobile.getAppsCount
 
---[[ @getPathToFileInStorage: full path to file in storage folder
---! @parameters:
---! @pFileName - file name
---! @pAppId - application number (1, 2, etc.)
---! @return: path
+--[[ @getHMIConnection: return HMI connection object
+--! @parameters: none
+--! @return: HMI connection object
 --]]
-function m.getPathToFileInStorage(pFileName, pAppId)
-  if not pAppId then pAppId = 1 end
-  return commonPreconditions:GetPathToSDL() .. "storage/" .. m.getConfigAppParams( pAppId ).fullAppID .. "_"
-    .. utils.getDeviceMAC() .. "/" .. pFileName
-end
+m.getHMIConnection = m.hmi.getConnection
+
+--[[ @getHMIAppId: get HMI application identifier
+--! @parameters:
+--! pAppId - application number (1, 2, etc.)
+--! @return: application identifier
+--]]
+m.getHMIAppId = m.app.getHMIId
 
 --[[ @setHMIAppId: set HMI application identifier
 --! @parameters:
@@ -502,26 +742,41 @@ end
 --! pAppId - application number (1, 2, etc.)
 --! @return: none
 --]]
-function m.setHMIAppId(pHMIAppId, pAppId)
-  if not pAppId then pAppId = 1 end
-  hmiAppIds[m.getConfigAppParams(pAppId).fullAppID] = pHMIAppId
-end
+m.setHMIAppId = m.app.setHMIId
 
 --[[ @getHMIAppIds: return array of all HMI application identifiers
 --! @parameters: none
 --! @return: array of all HMI application identifiers
 --]]
-function m.getHMIAppIds()
-  return hmiAppIds
-end
+m.getHMIAppIds = m.app.getHMIIds
 
 --[[ @deleteHMIAppId: remove HMI application identifier
 --! @parameters:
 --! pAppId - application number (1, 2, etc.)
 --! @return: none
 --]]
-function m.deleteHMIAppId(pAppId)
-  hmiAppIds[m.getConfigAppParams(pAppId).fullAppID] = nil
-end
+m.deleteHMIAppId = m.app.deleteHMIId
+
+--[[ @getPathToFileInStorage: full path to file in storage folder
+--! @parameters:
+--! @pFileName - file name
+--! @pAppId - application number (1, 2, etc.)
+--! @return: path
+--]]
+m.getPathToFileInStorage = m.sdl.getPathToFileInStorage
+
+--[[ @setSDLConfigParameter: change original value of parameter in SDL .ini file
+--! @parameters:
+--! pParamName - name of the parameter
+--! pParamValue - value to be set
+--! @return: none
+--]]
+m.setSDLIniParameter = m.sdl.setSDLIniParameter
+
+--[[ @restoreSDLConfigParameters: restore original values of parameters in SDL .ini file
+--! @parameters: none
+--! @return: none
+--]]
+m.restoreSDLIniParameters = m.sdl.restoreSDLIniParameters
 
 return m

@@ -75,6 +75,7 @@ function m.cloneTable(pTbl)
   return copy
 end
 
+--- [DEPRECATED]
 --[[ @wait: delay test step for specific timeout
 --! @parameters:
 --! pTimeOut - time to wait in ms
@@ -93,16 +94,18 @@ end
 --! @parameters: none
 --! @return: name of the device
 --]]
-function m.getDeviceName()
-  return config.mobileHost .. ":" .. config.mobilePort
+function m.getDeviceName(host, port)
+  if not host then host = config.mobileHost end
+  if not port then port = config.mobilePort end
+  return host .. ":" .. port
 end
 
 --[[ @getDeviceMAC: provide device MAC address
 --! @parameters: none
 --! @return: MAC address of the device
 --]]
-function m.getDeviceMAC()
-  local cmd = "echo -n " .. m.getDeviceName() .. " | sha256sum | awk '{printf $1}'"
+function m.getDeviceMAC(host, port)
+  local cmd = "echo -n " .. m.getDeviceName(host, port) .. " | sha256sum | awk '{printf $1}'"
   local handle = io.popen(cmd)
   local result = handle:read("*a")
   handle:close()
@@ -216,6 +219,14 @@ function m.isFileExist(pFile)
     file:close()
     return true
   end
+end
+
+function m.addNetworkInterface(pId, pAddress)
+  os.execute("ifconfig lo:" .. pId .." " .. pAddress)
+end
+
+function m.deleteNetworkInterface(pId)
+  os.execute("ifconfig lo:" .. pId .." down")
 end
 
 return m
