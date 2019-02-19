@@ -50,60 +50,7 @@ local requestParams = {
       "VRSyncProxyTester",
     }
   }
-  -- [2] = {
-  --   language ="EN-US",
-  --   hmiDisplayLanguage ="EN-US",
-  --   appName ="Test Application 2",
-  --   appID = "00022",
-  --   fullAppID = "0000001",
-  --   ttsName = {
-  --     {
-  --       text ="SyncProxyTester",
-  --       type ="TEXT",
-  --     },
-  --   },
-  --   ngnMediaScreenAppName ="SPT",
-  --   vrSynonyms = {
-  --     "VRSyncProxyTester",
-  --   }
-  -- }
 }
-
---[[ Local Functions ]]
-local function changeRegistrationSuccess(pAppId, pParams)
-
-  local cid = common.mobile.getSession(pAppId):SendRPC("ChangeRegistration", pParams)
-
-  common.hmi.getConnection():ExpectRequest("UI.ChangeRegistration", {
-    appName = pParams.appName,
-    language = pParams.hmiDisplayLanguage,
-    ngnMediaScreenAppName = pParams.ngnMediaScreenAppName,
-    appID = common.app.getHMIId(pAppId)
-  })
-  :Do(function(_, data)
-      common.hmi.getConnection():SendResponse(data.id, data.method, "SUCCESS", {})
-    end)
-
-  common.hmi.getConnection():ExpectRequest("VR.ChangeRegistration", {
-    language = pParams.language,
-    vrSynonyms = pParams.vrSynonyms,
-    appID = common.getHMIAppId(pAppId)
-  })
-  :Do(function(_, data)
-     common.hmi.getConnection():SendResponse(data.id, data.method, "SUCCESS", {})
-    end)
-
-  common.hmi.getConnection():ExpectRequest("TTS.ChangeRegistration", {
-    language = pParams.language,
-    ttsName = pParams.ttsName,
-    appID = common.getHMIAppId(pAppId)
-  })
-  :Do(function(_, data)
-      common.hmi.getConnection():SendResponse(data.id, data.method, "SUCCESS", {})
-    end)
-
-  common.mobile.getSession(pAppId):ExpectResponse(cid, { success = true, resultCode = "SUCCESS" })
-end
 
 --[[ Scenario ]]
 runner.Title("Preconditions")
@@ -114,7 +61,7 @@ runner.Step("Register App1 from device 1", common.registerAppEx, {1, appParams[1
 runner.Step("Register App2 from device 2", common.registerAppEx, {2, appParams[2], 2})
 
 runner.Title("Test")
-runner.Step("ChangeRegistration for App2 from device 2", changeRegistrationSuccess, {2, requestParams[1]})
+runner.Step("ChangeRegistration for App2 from device 2", common.changeRegistrationSuccess, {2, requestParams[1]})
 
 runner.Title("Postconditions")
 runner.Step("Remove mobile devices", common.clearMobDevices, {devices})
