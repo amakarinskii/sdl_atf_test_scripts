@@ -12,7 +12,7 @@
 -- 1)Send RegisterAppInterface(resultCode = SUCCESS) response to Mobile №1
 -- 2)Send RegisterAppInterface(resultCode = SUCCESS) response to Mobile №2
 -- 3)Send first OnAppRegistered notification to HMI
--- 4)Send second OnAppRegistered notification to HMI
+-- 4)Send second x notification to HMI
 ---------------------------------------------------------------------------------------------------
 --[[ Required Shared libraries ]]
 local runner = require('user_modules/script_runner')
@@ -32,7 +32,7 @@ local appParams = {
   [2] = { appName = "Test Application 2", appID = "00022", fullAppID = "0000002" }
 }
 
-local requestParams = {
+local changeRegParams = {
   [1] = {
     language ="EN-US",
     hmiDisplayLanguage ="EN-US",
@@ -52,6 +52,21 @@ local requestParams = {
   }
 }
 
+--[[ Local Functions ]]
+local function changeRegistrationSuccessLocal(pAppId, pParams)
+  common.changeRegistrationSuccess(pAppId, pParams)
+  common.hmi.getConnection():ExpectNotification("BasicCommunication.OnAppRegistered",
+        {
+          application = {
+            appName = pParams.appName,
+            deviceInfo = {
+              name = common.getDeviceName(connection.host, connection.port),
+              id = common.getDeviceMAC(connection.host, connection.port)
+            }
+          }
+        })
+end
+
 --[[ Scenario ]]
 runner.Title("Preconditions")
 runner.Step("Clean environment", common.preconditions)
@@ -61,7 +76,7 @@ runner.Step("Register App1 from device 1", common.registerAppEx, {1, appParams[1
 runner.Step("Register App2 from device 2", common.registerAppEx, {2, appParams[2], 2})
 
 runner.Title("Test")
-runner.Step("ChangeRegistration for App2 from device 2", common.changeRegistrationSuccess, {2, requestParams[1]})
+runner.Step("ChangeRegistration for App2 from device 2", changeRegistrationSuccessLocal, {2, changeRegParams[1]})
 
 runner.Title("Postconditions")
 runner.Step("Remove mobile devices", common.clearMobDevices, {devices})
