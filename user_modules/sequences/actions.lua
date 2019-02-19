@@ -41,6 +41,19 @@ test.mobileSession = {}
 
 --[[ Functions ]]
 
+local function getMobConnectionFromSession(pMobSession)
+  return pMobSession.mobile_session_impl.connection
+end
+
+local function getHmiAppIdKey(pAppId)
+  local appParams = m.app.getParams(pAppId)
+  local appId = appParams.fullAppID
+  if not appId then appId = appParams.appID end
+
+  local connection = getMobConnectionFromSession(m.mobile.getSession(pAppId))
+  return utils.getDeviceName(connection.host, connection.port) .. tostring(appId)
+end
+
 local function MobRaiseEvent(self, pEvent, pEventName)
   if pEventName == nil then pEventName = "noname" end
     reporter.AddMessage(debug.getinfo(1, "n").name, pEventName)
@@ -300,7 +313,7 @@ function m.mobile.getApps(pMobConnId)
 
   local mobileSessions = {}
   for _, mobileSession in ipairs(test.mobileSession) do
-    if mobileSession.connection == test.mobileConnections[pMobConnId] then
+    if getMobConnectionFromSession(mobileSession) == test.mobileConnections[pMobConnId] then
       table.insert(mobileSessions, mobileSession)
     end
   end
@@ -450,16 +463,16 @@ end
 
 function m.app.getHMIId(pAppId)
   if not pAppId then pAppId = 1 end
-  return hmiAppIds[m.app.getParams(pAppId).fullAppID]
+  return hmiAppIds[getHmiAppIdKey(pAppId)]
 end
 
 function m.app.setHMIId(pHMIAppId, pAppId)
   if not pAppId then pAppId = 1 end
-  hmiAppIds[m.app.getParams(pAppId).fullAppID] = pHMIAppId
+  hmiAppIds[getHmiAppIdKey(pAppId)] = pHMIAppId
 end
 
 function m.app.deleteHMIId(pAppId)
-  hmiAppIds[m.app.getParams(pAppId).fullAppID] = nil
+  hmiAppIds[getHmiAppIdKey(pAppId)] = nil
 end
 
 --[[ Functions of sdl submodule ]]
