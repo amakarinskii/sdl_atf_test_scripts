@@ -27,7 +27,7 @@ function common.start()
       :Do(function()
           common.init.HMI_onReady()
           :Do(function()
-          	  common.hmi.getConnection():RaiseEvent(event, "Start event")
+              common.hmi.getConnection():RaiseEvent(event, "Start event")
             end)
         end)
     end)
@@ -35,22 +35,34 @@ function common.start()
 end
 
 function common.connectMobDevice(pMobConnId, deviceInfo)
-	utils.addNetworkInterface(pMobConnId, deviceInfo.host)
-	common.mobile.createConnection(pMobConnId, deviceInfo.host, deviceInfo.port)
-	common.mobile.connect(pMobConnId)
+  utils.addNetworkInterface(pMobConnId, deviceInfo.host)
+  common.mobile.createConnection(pMobConnId, deviceInfo.host, deviceInfo.port)
+  common.mobile.connect(pMobConnId)
 end
 
 function common.deleteMobDevice(pMobConnId)
-	-- common.mobile.disconnect(pMobConnId)
-	-- common.mobile.deleteConnection(pMobConnId)
-	utils.deleteNetworkInterface(pMobConnId)
+  -- common.mobile.disconnect(pMobConnId)
+  -- common.mobile.deleteConnection(pMobConnId)
+  utils.deleteNetworkInterface(pMobConnId)
+end
+
+function common.connectMobDevices(pDevices)
+  for i = 1, #pDevices do
+    common.connectMobDevice(i, pDevices[i])
+  end
+end
+
+function common.clearMobDevices(pDevices)
+  for i = 1, #pDevices do
+    common.deleteMobDevice(i)
+  end
 end
 
 function common.registerAppEx(pAppId, pAppParams, pMobConnId)
-	local appParams = common.app.getParams(pAppId)
-	for k, v in pairs(pAppParams) do
-		appParams[k] = v
-	end
+  local appParams = common.app.getParams(pAppId)
+  for k, v in pairs(pAppParams) do
+    appParams[k] = v
+  end
 
   local session = common.mobile.createSession(pAppId, pMobConnId)
   session:StartService(7)
@@ -59,14 +71,14 @@ function common.registerAppEx(pAppId, pAppParams, pMobConnId)
       local connection = session.mobile_session_impl.connection
       common.hmi.getConnection():ExpectNotification("BasicCommunication.OnAppRegistered",
         {
-        	application = {
-          	appName = appParams.appName,
-          	deviceInfo = {
-            	name = common.getDeviceName(connection.host, connection.port),
-            	id = common.getDeviceMAC(connection.host, connection.port)
-          	}
-        	}
-      	})
+          application = {
+            appName = appParams.appName,
+            deviceInfo = {
+              name = common.getDeviceName(connection.host, connection.port),
+              id = common.getDeviceMAC(connection.host, connection.port)
+            }
+          }
+        })
       :Do(function(_, d1)
         common.app.setHMIId(d1.params.application.appID, pAppId)
           -- common.hmi.getConnection():ExpectRequest("BasicCommunication.PolicyUpdate")
@@ -82,6 +94,19 @@ function common.registerAppEx(pAppId, pAppParams, pMobConnId)
           :Times(AnyNumber())
         end)
     end)
+end
+
+function common.deactivateApp(pAppId, pNotifParams)
+  common.getHMIConnection():SendNotification("BasicCommunication.OnAppDeactivated",
+    { appID = common.getHMIAppId(pAppId)})
+  common.getMobileSession(pAppId):ExpectNotification("OnHMIStatus", pNotifParams)
+end
+
+function common.exitApp(pAppId)
+common.getHMIConnection():SendNotification("BasicCommunication.OnExitApplication",
+  { appID = common.getHMIAppId(pAppId), reason = "USER_EXIT"})
+common.getMobileSession(pAppId):ExpectNotification("OnHMIStatus",
+  { hmiLevel = "NONE", audioStreamingState = "NOT_AUDIBLE", systemContext = "MAIN"})
 end
 
 return common

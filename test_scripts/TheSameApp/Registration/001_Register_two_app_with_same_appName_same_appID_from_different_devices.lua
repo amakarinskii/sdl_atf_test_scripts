@@ -28,33 +28,62 @@ local devices = {
 }
 
 local appParams = {
-	[1] = { appName = "Test Application", appID = "single", fullAppID = "0000001" },
-	[2] = { appName = "Test Application", appID = "single", fullAppID = "0000001" }
+  [1] = {
+    syncMsgVersion =
+    {
+      majorVersion = 5,
+      minorVersion = 0
+    },
+    appName = "Test Application1",
+    isMediaApplication = false,
+    languageDesired = 'EN-US',
+    hmiDisplayLanguageDesired = 'EN-US',
+    appHMIType = { "DEFAULT" },
+    appID = "0001",
+    fullAppID = "0000001",
+    deviceInfo =
+    {
+      os = "Android",
+      carrier = "Megafon",
+      firmwareRev = "Name: Linux, Version: 3.4.0-perf",
+      osVersion = "4.4.2",
+      maxNumberRFCOMMPorts = 1
+    }
+  },
+  [2] = {
+    syncMsgVersion =
+    {
+      majorVersion = 5,
+      minorVersion = 0
+    },
+    appName = "Test Application1",
+    isMediaApplication = false,
+    languageDesired = 'EN-US',
+    hmiDisplayLanguageDesired = 'EN-US',
+    appHMIType = { "DEFAULT" },
+    appID = "0001",
+    fullAppID = "0000001",
+    deviceInfo =
+    {
+      os = "Android",
+      carrier = "Megafon",
+      firmwareRev = "Name: Linux, Version: 3.4.0-perf",
+      osVersion = "4.4.2",
+      maxNumberRFCOMMPorts = 1
+    }
+  },
 }
-
---[[ Local Functions ]]
-local function connectMobDevices()
-	for i = 1, #devices do
-		common.connectMobDevice(i, devices[i])
-	end
-end
-
-local function clearMobDevices()
-	for i = 1, #devices do
-		common.deleteMobDevice(i)
-	end
-end
 
 --[[ Scenario ]]
 runner.Title("Preconditions")
 runner.Step("Clean environment", common.preconditions)
 runner.Step("Start SDL and HMI", common.start)
-runner.Step("Connect two mobile devices to SDL", connectMobDevices)
+runner.Step("Connect two mobile devices to SDL", common.connectMobDevices, {devices})
 
 runner.Title("Test")
 runner.Step("Register App1 from device 1", common.registerAppEx, {1, appParams[1], 1})
-runner.Step("Register App2 from device 2", common.registerAppEx, {2, appParams[2], 2})
+runner.Step("Register App2 from device 2", common.registerAppEx, {2, appParams[2], 1})
 
 runner.Title("Postconditions")
-runner.Step("Remove mobile devices", clearMobDevices)
+runner.Step("Remove mobile devices", common.clearMobDevices, {devices})
 runner.Step("Stop SDL", common.postconditions)

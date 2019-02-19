@@ -30,6 +30,7 @@ local m = {
 
 --[[ Constants ]]
 m.minTimeout = 500
+m.timeout = 2000
 
 --[[ Variables ]]
 local hmiAppIds = {}
@@ -414,8 +415,8 @@ function m.app.activate(pAppId)
   local params = m.app.getParams(pAppId)
   local audioStreamingState = "NOT_AUDIBLE"
   if params.isMediaApplication or
-      commonFunctions:table_contains(params.appHMIType, "NAVIGATION") or
-      commonFunctions:table_contains(params.appHMIType, "COMMUNICATION") then
+      utils.isTableContains(params.appHMIType, "NAVIGATION") or
+      utils.isTableContains(params.appHMIType, "COMMUNICATION") then
     audioStreamingState = "AUDIBLE"
   end
   m.mobile.getSession(pAppId):ExpectNotification("OnHMIStatus",
