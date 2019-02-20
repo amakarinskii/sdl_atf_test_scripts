@@ -2,22 +2,23 @@
 --   Proposal:
 -- https://github.com/smartdevicelink/sdl_evolution/blob/master/proposals/0204-same-app-from-multiple-devices.md
 --   Description:
--- Two mobile applications with the same appNames, same appIDs and same ttsName are registering from a same mobile
--- device. Check if an OnAppRegistered notification will be sent for the first app and will NOT be sent for the second
--- app.
+-- Two mobile applications with the same appNames and ttsName and different appIDs are registering from different
+-- mobile devices. Check if there was sent an OnAppRegistered notification containing the same ttsName field for
+-- both applications.
 --   Precondition:
 -- 1) SDL and HMI are started
 -- 2) Mobile №1 and №2 are connected to SDL
 --   In case:
--- 1) Mobile sends RegisterAppInterface request (with all mandatories) with appID = 0001, appName = "Test Application"
+-- 1) Mobile №1 sends RegisterAppInterface request (with all mandatories) with appID= 0001, appName = "Test Application"
 --    and ttsName = "TtsName" to SDL
--- 2) SDL sends RegisterAppInterface(resultCode = SUCCESS) response to Mobile
+-- 2) SDL sends RegisterAppInterface(resultCode = SUCCESS) response to Mobile №1
 -- 3) SDL sends OnAppRegistered(application.appName = "first_app", ttsName = "TtsName") notification to HMI
--- 4) Mobile sends RegisterAppInterface request (with all mandatories) with appID = 0022, appName = "Test Application 2"
---    and ttsName = "TtsName" to SDL
+-- 4) Mobile №2 sends RegisterAppInterface request (with all mandatories) with appID= 00022,
+--    appName = "Test Application" and ttsName = "TtsName" to SDL
 --   SDL does:
--- 1) Send RegisterAppInterface(resultCode = "DUPLICATE_NAME") response to Mobile
--- 2) NOT send OnAppRegistered(application.appName = "second_app", ttsName = "TtsName") notification to HMI from Mobile
+-- 1) Send RegisterAppInterface(resultCode = SUCCESS) response to Mobile №2
+-- 2) SDL sends OnAppRegistered(application.appName = "first_app", ttsName = "TtsName") notification to HMI
+--    from Mobile №2
 ---------------------------------------------------------------------------------------------------
 --[[ Required Shared libraries ]]
 local runner = require('user_modules/script_runner')
@@ -28,7 +29,8 @@ runner.testSettings.isSelfIncluded = false
 
 --[[ Local Data ]]
 local devices = {
-  [1] = { host = "1.0.0.1", port = config.mobilePort }
+  [1] = { host = "1.0.0.1",         port = config.mobilePort },
+  [2] = { host = "192.168.100.199", port = config.mobilePort }
 }
 
 local appParams = {
@@ -42,7 +44,7 @@ local appParams = {
             }
           }
         },
-  [2] = { appName   = "Test Application 2",
+  [2] = { appName   = "Test Application",
           appID     = "00022",
           fullAppID = "00000022",
           ttsName   = {
@@ -53,9 +55,8 @@ local appParams = {
           }
         }
 }
-
 --[[ Local Functions ]]
-local function registerAppExLocal_1(pAppId, pAppParams, pMobConnId)
+local function registerAppEx(pAppId, pAppParams, pMobConnId)
   local appParams = common.app.getParams(pAppId)
   for k, v in pairs(pAppParams) do
     appParams[k] = v
@@ -89,21 +90,6 @@ local function registerAppExLocal_1(pAppId, pAppParams, pMobConnId)
     end)
 end
 
-local function registerAppExLocal_2(pAppId, pAppParams, pMobConnId)
-  local appParams = common.app.getParams(pAppId)
-  for k, v in pairs(pAppParams) do
-    appParams[k] = v
-  end
-
-  local session = common.mobile.createSession(pAppId, pMobConnId)
-  session:StartService(7)
-  :Do(function()
-      local corId = session:SendRPC("RegisterAppInterface", appParams)
-      common.hmi.getConnection():ExpectNotification("BasicCommunication.OnAppRegistered"):Times(0)
-      session:ExpectResponse(corId, { success = false, resultCode = "DUPLICATE_NAME" })
-    end)
-end
-
 --[[ Scenario ]]
 runner.Title("Preconditions")
 runner.Step("Clean environment", common.preconditions)
@@ -111,8 +97,8 @@ runner.Step("Start SDL and HMI", common.start)
 runner.Step("Connect two mobile devices to SDL", common.connectMobDevices, {devices})
 
 runner.Title("Test")
-runner.Step("Register App1 from device 1", registerAppExLocal_1, {1, appParams[1], 1})
-runner.Step("Register App2 from device 2", registerAppExLocal_2, {2, appParams[2], 1})
+runner.Step("Register App1 from device 1", registerAppEx, {1, appParams[1], 1})
+runner.Step("Register App2 from device 2", registerAppEx, {2, appParams[2], 2})
 
 runner.Title("Postconditions")
 runner.Step("Remove mobile devices", common.clearMobDevices, {devices})

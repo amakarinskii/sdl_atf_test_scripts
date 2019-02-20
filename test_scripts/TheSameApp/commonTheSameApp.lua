@@ -91,7 +91,6 @@ function common.registerAppEx(pAppId, pAppParams, pMobConnId)
           session:ExpectNotification("OnHMIStatus",
             { hmiLevel = "NONE", audioStreamingState = "NOT_AUDIBLE", systemContext = "MAIN" })
           session:ExpectNotification("OnPermissionsChange")
-          :Times(AnyNumber())
         end)
     end)
 end
@@ -139,6 +138,13 @@ function common.changeRegistrationSuccess(pAppId, pParams)
   :Do(function(_, data)
       common.hmi.getConnection():SendResponse(data.id, data.method, "SUCCESS", {})
     end)
+
+  common.hmi.getConnection():ExpectNotification("BasicCommunication.OnAppRegistered",
+  {
+    application = {
+      appName = pParams.appName
+    }
+  })
 
   common.mobile.getSession(pAppId):ExpectResponse(cid, { success = true, resultCode = "SUCCESS" })
 end

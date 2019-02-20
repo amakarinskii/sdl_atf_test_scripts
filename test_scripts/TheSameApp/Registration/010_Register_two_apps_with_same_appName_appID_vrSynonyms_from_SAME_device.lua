@@ -1,18 +1,23 @@
 ---------------------------------------------------------------------------------------------------
--- Proposal:
+--   Proposal:
 -- https://github.com/smartdevicelink/sdl_evolution/blob/master/proposals/0204-same-app-from-multiple-devices.md
--- Description: Registration of two mobile applications with the same appName and same appID from different mobile devices
--- Precondition:
--- 1)SDL and HMI are started
+--   Description:
+-- Two mobile applications with the same appNames, same appIDs and same vrSysnonyms are registering from a same mobile
+-- device. Check if an OnAppRegistered notification will be sent for the first app and will NOT be sent for the second
+-- app.
+--   Precondition:
+-- 1) SDL and HMI are started
 -- 2) Mobile №1 and №2 are connected to SDL
--- In case:
--- 1)Mobile №1 sends RegisterAppInterface request (with all mandatories) to SDL
--- 2)Mobile №2 sends RegisterAppInterface request (with all mandatories) with same appName and same appID to SDL
--- SDL does:
--- 1)Send RegisterAppInterface(resultCode = SUCCESS) response to Mobile №1
--- 2)Send RegisterAppInterface(resultCode = SUCCESS) response to Mobile №2
--- 3)Send first OnAppRegistered notification to HMI
--- 4)Send second OnAppRegistered notification to HMI
+--   In case:
+-- 1) Mobile sends RegisterAppInterface request (with all mandatories) with appID = 1, appName = "Test Application" and
+--    vrSynonyms = "vrApp" to SDL
+-- 2) SDL sends RegisterAppInterface(resultCode = SUCCESS) response to Mobile
+-- 3) SDL sends OnAppRegistered(application.appName = "first_app", vrSysnonyms = "vrApp") notification to HMI
+-- 4) Mobile sends RegisterAppInterface request (with all mandatories) with appID = 2, appName = "Test Application 2"
+--    and vrSynonyms = "vrApp" to SDL
+--   SDL does:
+-- 1) Send RegisterAppInterface(resultCode = "DUPLICATE_NAME") response to Mobile
+-- 2) NOT send OnAppRegistered(application.appName = "second_app", vrSysnonyms = "vrApp") notification to HMI from Mobile
 ---------------------------------------------------------------------------------------------------
 --[[ Required Shared libraries ]]
 local runner = require('user_modules/script_runner')
@@ -23,7 +28,7 @@ runner.testSettings.isSelfIncluded = false
 
 --[[ Local Data ]]
 local devices = {
-  [1] = { host = "1.0.0.1", port = config.mobilePort },
+  [1] = { host = "1.0.0.1", port = config.mobilePort }
 }
 
 local appParams = {
@@ -32,7 +37,7 @@ local appParams = {
 }
 
 --[[ Local Functions ]]
-function registerAppExLocal_1(pAppId, pAppParams, pMobConnId)
+local function registerAppExLocal_1(pAppId, pAppParams, pMobConnId)
   local appParams = common.app.getParams(pAppId)
   for k, v in pairs(pAppParams) do
     appParams[k] = v
@@ -47,7 +52,6 @@ function registerAppExLocal_1(pAppId, pAppParams, pMobConnId)
         {
           application = {
             appName = appParams.appName,
-            appID = appParams.appID,
             vrSynonyms = appParams.vrSynonyms,
             deviceInfo = {
               name = common.getDeviceName(connection.host, connection.port),
@@ -57,10 +61,6 @@ function registerAppExLocal_1(pAppId, pAppParams, pMobConnId)
         })
       :Do(function(_, d1)
         common.app.setHMIId(d1.params.application.appID, pAppId)
-          -- common.hmi.getConnection():ExpectRequest("BasicCommunication.PolicyUpdate")
-          --   :Do(function(_, d2)
-          --     common.hmi.getConnection():SendResponse(d2.id, d2.method, "SUCCESS", { })
-          --   end)
         end)
       session:ExpectResponse(corId, { success = true, resultCode = "SUCCESS" })
       :Do(function()
@@ -72,7 +72,7 @@ function registerAppExLocal_1(pAppId, pAppParams, pMobConnId)
     end)
 end
 
-function registerAppExLocal_2(pAppId, pAppParams, pMobConnId)
+local function registerAppExLocal_2(pAppId, pAppParams, pMobConnId)
   local appParams = common.app.getParams(pAppId)
   for k, v in pairs(pAppParams) do
     appParams[k] = v
@@ -82,10 +82,9 @@ function registerAppExLocal_2(pAppId, pAppParams, pMobConnId)
   session:StartService(7)
   :Do(function()
       local corId = session:SendRPC("RegisterAppInterface", appParams)
-      local connection = session.mobile_session_impl.connection
       common.hmi.getConnection():ExpectNotification("BasicCommunication.OnAppRegistered"):Times(0)
       session:ExpectResponse(corId, { success = false, resultCode = "DUPLICATE_NAME" })
-  common.run.wait(10000)
+      end)
 end
 
 --[[ Scenario ]]
