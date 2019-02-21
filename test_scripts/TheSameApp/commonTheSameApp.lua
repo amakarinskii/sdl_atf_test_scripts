@@ -91,7 +91,6 @@ function common.registerAppEx(pAppId, pAppParams, pMobConnId)
           session:ExpectNotification("OnHMIStatus",
             { hmiLevel = "NONE", audioStreamingState = "NOT_AUDIBLE", systemContext = "MAIN" })
           session:ExpectNotification("OnPermissionsChange")
-          :Times(AnyNumber())
         end)
     end)
 end
@@ -107,6 +106,40 @@ common.getHMIConnection():SendNotification("BasicCommunication.OnExitApplication
   { appID = common.getHMIAppId(pAppId), reason = "USER_EXIT"})
 common.getMobileSession(pAppId):ExpectNotification("OnHMIStatus",
   { hmiLevel = "NONE", audioStreamingState = "NOT_AUDIBLE", systemContext = "MAIN"})
+end
+
+function common.changeRegistrationSuccess(pAppId, pParams)
+  local cid = common.mobile.getSession(pAppId):SendRPC("ChangeRegistration", pParams)
+
+  common.hmi.getConnection():ExpectRequest("VR.ChangeRegistration", {
+    language = pParams.language,
+    vrSynonyms = pParams.vrSynonyms,
+    appID = common.getHMIAppId(pAppId)
+  })
+  :Do(function(_, data)
+     common.hmi.getConnection():SendResponse(data.id, data.method, "SUCCESS", {})
+    end)
+
+  common.hmi.getConnection():ExpectRequest("TTS.ChangeRegistration", {
+    language = pParams.language,
+    ttsName = pParams.ttsName,
+    appID = common.getHMIAppId(pAppId)
+  })
+  :Do(function(_, data)
+      common.hmi.getConnection():SendResponse(data.id, data.method, "SUCCESS", {})
+    end)
+
+  common.hmi.getConnection():ExpectRequest("UI.ChangeRegistration", {
+    appName = pParams.appName,
+    language = pParams.hmiDisplayLanguage,
+    ngnMediaScreenAppName = pParams.ngnMediaScreenAppName,
+    appID = common.app.getHMIId(pAppId)
+  })
+  :Do(function(_, data)
+      common.hmi.getConnection():SendResponse(data.id, data.method, "SUCCESS", {})
+    end)
+
+  common.mobile.getSession(pAppId):ExpectResponse(cid, { success = true, resultCode = "SUCCESS" })
 end
 
 return common

@@ -1,14 +1,15 @@
 ---------------------------------------------------------------------------------------------------
 -- Proposal:
 -- https://github.com/smartdevicelink/sdl_evolution/blob/master/proposals/0204-same-app-from-multiple-devices.md
--- Description: Registration of two mobile applications with the same appName and same appID from different mobile devices
--- Precondition:
+-- Description: Registration of two mobile applications with the same appName and same appID from different mobile
+-- devices
+--   Precondition:
 -- 1)SDL and HMI are started
 -- 2) Mobile №1 and №2 are connected to SDL
--- In case:
+--   In case:
 -- 1)Mobile №1 sends RegisterAppInterface request (with all mandatories) to SDL
 -- 2)Mobile №2 sends RegisterAppInterface request (with all mandatories) with same appName and same appID to SDL
--- SDL does:
+--   SDL does:
 -- 1)Send RegisterAppInterface(resultCode = SUCCESS) response to Mobile №1
 -- 2)Send RegisterAppInterface(resultCode = SUCCESS) response to Mobile №2
 -- 3)Send first OnAppRegistered notification to HMI
@@ -23,8 +24,8 @@ runner.testSettings.isSelfIncluded = false
 
 --[[ Local Data ]]
 local devices = {
-  [1] = { host = "1.0.0.1", port = config.mobilePort },
-  [2] = { host = "192.168.100.199", port = config.mobilePort },
+  [1] = { host = "1.0.0.1",         port = config.mobilePort },
+  [2] = { host = "192.168.100.199", port = config.mobilePort }
 }
 
 local appParams = {
@@ -71,7 +72,7 @@ local appParams = {
       osVersion = "4.4.2",
       maxNumberRFCOMMPorts = 1
     }
-  },
+  }
 }
 
 --[[ Scenario ]]
