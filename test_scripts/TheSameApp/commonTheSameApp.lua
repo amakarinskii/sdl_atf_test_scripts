@@ -139,13 +139,6 @@ function common.changeRegistrationSuccess(pAppId, pParams)
       common.hmi.getConnection():SendResponse(data.id, data.method, "SUCCESS", {})
     end)
 
-  common.hmi.getConnection():ExpectNotification("BasicCommunication.OnAppRegistered",
-  {
-    application = {
-      appName = pParams.appName
-    }
-  })
-
   common.mobile.getSession(pAppId):ExpectResponse(cid, { success = true, resultCode = "SUCCESS" })
 end
 
