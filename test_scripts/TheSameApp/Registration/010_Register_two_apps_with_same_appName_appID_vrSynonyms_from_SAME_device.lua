@@ -52,12 +52,12 @@ local function registerAppExLocal_1(pAppId, pAppParams, pMobConnId)
         {
           application = {
             appName = appParams.appName,
-            vrSynonyms = appParams.vrSynonyms,
             deviceInfo = {
               name = common.getDeviceName(connection.host, connection.port),
               id = common.getDeviceMAC(connection.host, connection.port)
             }
-          }
+          },
+          vrSynonyms = appParams.vrSynonyms
         })
       :Do(function(_, d1)
         common.app.setHMIId(d1.params.application.appID, pAppId)
@@ -67,7 +67,6 @@ local function registerAppExLocal_1(pAppId, pAppParams, pMobConnId)
           session:ExpectNotification("OnHMIStatus",
             { hmiLevel = "NONE", audioStreamingState = "NOT_AUDIBLE", systemContext = "MAIN" })
           session:ExpectNotification("OnPermissionsChange")
-          :Times(AnyNumber())
         end)
     end)
 end
@@ -84,7 +83,7 @@ local function registerAppExLocal_2(pAppId, pAppParams, pMobConnId)
       local corId = session:SendRPC("RegisterAppInterface", appParams)
       common.hmi.getConnection():ExpectNotification("BasicCommunication.OnAppRegistered"):Times(0)
       session:ExpectResponse(corId, { success = false, resultCode = "DUPLICATE_NAME" })
-      end)
+    end)
 end
 
 --[[ Scenario ]]

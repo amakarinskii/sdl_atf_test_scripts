@@ -70,12 +70,12 @@ local function registerAppExLocal_1(pAppId, pAppParams, pMobConnId)
         {
           application = {
             appName = appParams.appName,
-            ttsName = appParams.ttsName,
             deviceInfo = {
               name = common.getDeviceName(connection.host, connection.port),
               id = common.getDeviceMAC(connection.host, connection.port)
             }
-          }
+          },
+          ttsName = appParams.ttsName
         })
       :Do(function(_, d1)
         common.app.setHMIId(d1.params.application.appID, pAppId)

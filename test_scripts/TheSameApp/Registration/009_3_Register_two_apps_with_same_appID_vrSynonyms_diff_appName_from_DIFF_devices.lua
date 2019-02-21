@@ -54,12 +54,12 @@ local function registerAppEx(pAppId, pAppParams, pMobConnId)
         {
           application = {
             appName = appParams.appName,
-            vrSynonyms = appParams.vrSynonyms,
             deviceInfo = {
               name = common.getDeviceName(connection.host, connection.port),
               id = common.getDeviceMAC(connection.host, connection.port)
             }
-          }
+          },
+          vrSynonyms = appParams.vrSynonyms
         })
       :Do(function(_, d1)
         common.app.setHMIId(d1.params.application.appID, pAppId)
