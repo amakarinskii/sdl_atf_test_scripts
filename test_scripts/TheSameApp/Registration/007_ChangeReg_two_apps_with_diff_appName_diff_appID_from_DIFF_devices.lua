@@ -2,7 +2,7 @@
 --   Proposal:
 -- https://github.com/smartdevicelink/sdl_evolution/blob/master/proposals/0204-same-app-from-multiple-devices.md
 --   Description:
--- Two applications was registered with different appIDs and different appIDs on different mobile devices.
+-- Two applications was registered with different appIDs and different appNames on different mobile devices.
 -- After that second application calls for ChangeRegistration using same appName as first application has.
 --   Precondition:
 -- 1) SDL and HMI are started
@@ -10,7 +10,7 @@
 --   In case:
 -- 1) First app registered from Mobile №1
 -- 2) Second app registered from Mobile №2 with different appID and different appName
--- 3) Mobile №2 sends ChangeRegistration request (with all mandatories) with same appID as first app to SDL
+-- 3) Mobile №2 sends ChangeRegistration request (with all mandatories) with same appName as first app to SDL
 --   SDL does:
 -- 1) Send ChangeRegistration(resultCode = SUCCESS) response to Mobile №2
 -- 2) Send OnAppRegistered notification to HMI
@@ -37,18 +37,16 @@ local changeRegParams = {
   [1] = {
     language ="EN-US",
     hmiDisplayLanguage ="EN-US",
-    appName ="Test Application 2",
-    appID = "0001",
-    fullAppID = "0000001",
+    appName ="Test Application",
     ttsName = {
       {
         text ="SyncProxyTester",
-        type ="TEXT",
+        type ="TEXT"
       },
     },
     ngnMediaScreenAppName ="SPT",
     vrSynonyms = {
-      "VRSyncProxyTester",
+      "VRSyncProxyTester"
     }
   }
 }
