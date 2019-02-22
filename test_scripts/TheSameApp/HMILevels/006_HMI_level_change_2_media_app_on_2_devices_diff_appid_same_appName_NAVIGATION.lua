@@ -2,12 +2,13 @@
 --   Proposal:
 -- https://github.com/smartdevicelink/sdl_evolution/blob/master/proposals/0204-same-app-from-multiple-devices.md
 --   Description:
--- Registration of two mobile applications with the same appName and same appID from different mobile devices
+-- Registration of two mobile applications - App1 of "SYSTEM" HMI type and another one - App2 of "NAVIGATION" HMI type
+-- with the same appName and same appID from different mobile devices.
 --   Precondition:
 -- 1) SDL and HMI are started
 -- 2) Mobile №1 and №2 are connected to SDL
--- 3) App 1 (isMediaApplication = false, appID = 0000001, appName = "Test Application1") is registered from Mobile №1
--- 4) App 2 (isMediaApplication = false, appID = 0000001, appName = "Test Application1") is registered from Mobile №2
+-- 3) App 1 (isMediaApplication = false, appID = 0000001,  appName = "Test Application 1") is registered from Mobile №1
+-- 4) App 2 (isMediaApplication = false, appID = 00000022, appName = "Test Application 1") is registered from Mobile №2
 --   Steps:
 -- 1) Activate Application 1
 --   CheckSDL:
@@ -15,17 +16,25 @@
 --     SDL does NOT send OnHMIStatus to Mobile №2
 -- 2) Activate Application 2
 --   CheckSDL:
---     SDL sends OnHMIStatus( hmiLevel = BACKGROUND ) to Mobile №1
+--     SDL sends OnHMIStatus( hmiLevel = "BACKGROUND", audioStreamingState = "NOT_AUDIBLE") to Mobile №1
 --     SDL sends OnHMIStatus( hmiLevel = FULL ) to Mobile №2
 -- 3) Deactivate Application 2
 --   CheckSDL:
 --     SDL does NOT send OnHMIStatus to Mobile №1
---     SDL sends OnHMIStatus( hmiLevel = BACKGROUND ) to Mobile №2
+--     SDL sends OnHMIStatus( hmiLevel = "LIMITED", audioStreamingState = "AUDIBLE") to Mobile №2
 -- 4) Activate Application 1 once again
+--   CheckSDL:
+--     SDL sends OnHMIStatus( hmiLevel = FULL ) to Mobile №1
+--     SDL NOT sends OnHMIStatus() to Mobile №2
+-- 5) Deactivate Application 1
+--   CheckSDL:
+--     SDL sends OnHMIStatus( hmiLevel = "BACKGROUND", audioStreamingState = "NOT_AUDIBLE") to Mobile №1
+--     SDL does NOT send OnHMIStatus to Mobile №2
+-- 6) Exit Application 2
 --   CheckSDL:
 --     SDL does NOT send OnHMIStatus to Mobile №1
 --     SDL sends OnHMIStatus( hmiLevel = NONE ) to Mobile №2
--- 5) Deactivate Application 1
+-- 7) Activate Application 2 once again
 --   CheckSDL:
 --     SDL does NOT send OnHMIStatus to Mobile №1
 --     SDL sends OnHMIStatus( hmiLevel = FULL ) to Mobile №2
@@ -50,11 +59,11 @@ local appParams = {
       majorVersion = 5,
       minorVersion = 0
     },
-    appName = "Test Application1",
-    isMediaApplication = false,
+    appName = "Test Application 1",
     languageDesired = 'EN-US',
     hmiDisplayLanguageDesired = 'EN-US',
-    appHMIType = { "DEFAULT" },
+    isMediaApplication = false,
+    appHMIType = { "SYSTEM" },
     appID = "0001",
     fullAppID = "0000001",
     deviceInfo =
@@ -72,13 +81,13 @@ local appParams = {
       majorVersion = 5,
       minorVersion = 0
     },
-    appName = "Test Application1",
-    isMediaApplication = false,
+    appName = "Test Application 1",
     languageDesired = 'EN-US',
     hmiDisplayLanguageDesired = 'EN-US',
-    appHMIType = { "DEFAULT" },
-    appID = "0001",
-    fullAppID = "0000001",
+    isMediaApplication = false,
+    appHMIType = { "NAVIGATION" },
+    appID = "00022",
+    fullAppID = "00000022",
     deviceInfo =
     {
       os = "Android",
@@ -92,12 +101,12 @@ local appParams = {
 
 --[[ Local Functions ]]
 local function activateApp1()
-  common.mobile.getSession(2):ExpectNotification("OnHMIStatus"):Times(0)
+    common.mobile.getSession(2):ExpectNotification("OnHMIStatus"):Times(0)
   common.app.activate(1)
 end
 
 local function activateApp2()
-  common.mobile.getSession(1):ExpectNotification("OnHMIStatus",
+    common.mobile.getSession(1):ExpectNotification("OnHMIStatus",
     { hmiLevel = "BACKGROUND", audioStreamingState = "NOT_AUDIBLE", systemContext = "MAIN" })
   common.app.activate(2)
 end
@@ -105,11 +114,22 @@ end
 local function deactivateApp2()
   common.mobile.getSession(1):ExpectNotification("OnHMIStatus"):Times(0)
   local app2HMIStatusParams = {
+    hmiLevel = "LIMITED",
+    audioStreamingState = "AUDIBLE",
+    systemContext = "MAIN"
+  }
+  common.deactivateApp(2, app2HMIStatusParams)
+end
+
+local function deactivateApp1()
+  local app2HMIStatusParams = {
     hmiLevel = "BACKGROUND",
     audioStreamingState = "NOT_AUDIBLE",
     systemContext = "MAIN"
   }
-  common.deactivateApp(2, app2HMIStatusParams)
+
+  common.mobile.getSession(2):ExpectNotification("OnHMIStatus"):Times(0)
+  common.deactivateApp(1, app2HMIStatusParams)
 end
 
 local function exitApp2()
@@ -134,6 +154,8 @@ runner.Title("Test")
 runner.Step("Activate App 1", activateApp1)
 runner.Step("Activate App 2", activateApp2)
 runner.Step("Deactivate App 2", deactivateApp2)
+runner.Step("Activate App 1 once again", activateApp1)
+runner.Step("Deactivate App 1", deactivateApp1)
 runner.Step("Exit App 2", exitApp2)
 runner.Step("Activate App 2 again", reActivateApp2)
 

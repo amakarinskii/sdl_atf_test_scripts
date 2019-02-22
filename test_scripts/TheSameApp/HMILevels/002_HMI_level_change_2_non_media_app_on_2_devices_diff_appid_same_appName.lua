@@ -6,8 +6,8 @@
 --   Precondition:
 -- 1) SDL and HMI are started
 -- 2) Mobile №1 and №2 are connected to SDL
--- 3) App 1 (isMediaApplication = false, appID = 0000001, appName = "Test Application1") is registered from Mobile №1
--- 4) App 2 (isMediaApplication = false, appID = 0000001, appName = "Test Application1") is registered from Mobile №2
+-- 3) App 1 (isMediaApplication = false, appID = 0000001,  appName = "Test Application1") is registered from Mobile №1
+-- 4) App 2 (isMediaApplication = false, appID = 00000022, appName = "Test Application1") is registered from Mobile №2
 --   Steps:
 -- 1) Activate Application 1
 --   CheckSDL:
@@ -77,8 +77,8 @@ local appParams = {
     languageDesired = 'EN-US',
     hmiDisplayLanguageDesired = 'EN-US',
     appHMIType = { "DEFAULT" },
-    appID = "0001",
-    fullAppID = "0000001",
+    appID = "00022",
+    fullAppID = "00000022",
     deviceInfo =
     {
       os = "Android",

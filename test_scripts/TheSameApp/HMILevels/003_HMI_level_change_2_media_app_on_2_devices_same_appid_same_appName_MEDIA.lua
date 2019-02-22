@@ -2,7 +2,8 @@
 --   Proposal:
 -- https://github.com/smartdevicelink/sdl_evolution/blob/master/proposals/0204-same-app-from-multiple-devices.md
 --   Description:
--- Registration of two mobile applications with the same appName and same appID from different mobile devices
+-- Registration of two mobile applications of "MEDIA" HMI type with the same appName and same appID from different
+-- mobile devices.
 --   Precondition:
 -- 1) SDL and HMI are started
 -- 2) Mobile №1 and №2 are connected to SDL
@@ -20,19 +21,28 @@
 -- 3) Deactivate Application 2
 --   CheckSDL:
 --     SDL does NOT send OnHMIStatus to Mobile №1
---     SDL sends OnHMIStatus( hmiLevel = BACKGROUND ) to Mobile №2
+--     SDL sends OnHMIStatus( hmiLevel = LIMITED ) to Mobile №2
 -- 4) Activate Application 1 once again
+--   CheckSDL:
+--     SDL sends OnHMIStatus( hmiLevel = FULL ) to Mobile №1
+--     SDL sends OnHMIStatus( hmiLevel = BACKGROUND ) to Mobile №2
+-- 5) Deactivate Application 1
+--   CheckSDL:
+--     SDL sends OnHMIStatus( hmiLevel = LIMITED ) to Mobile №1
+--     SDL does NOT send OnHMIStatus to Mobile №2
+-- 6) Exit Application 2
 --   CheckSDL:
 --     SDL does NOT send OnHMIStatus to Mobile №1
 --     SDL sends OnHMIStatus( hmiLevel = NONE ) to Mobile №2
--- 5) Deactivate Application 1
+-- 7) Activate Application 2
 --   CheckSDL:
---     SDL does NOT send OnHMIStatus to Mobile №1
+--     SDL sends OnHMIStatus( hmiLevel = BACKGROUND ) to Mobile №1
 --     SDL sends OnHMIStatus( hmiLevel = FULL ) to Mobile №2
 ---------------------------------------------------------------------------------------------------
 --[[ Required Shared libraries ]]
 local runner = require('user_modules/script_runner')
 local common = require('test_scripts/TheSameApp/commonTheSameApp')
+local commonFunctions = require('user_modules/shared_testcases/commonFunctions')
 
 --[[ Test Configuration ]]
 runner.testSettings.isSelfIncluded = false
@@ -51,10 +61,10 @@ local appParams = {
       minorVersion = 0
     },
     appName = "Test Application1",
-    isMediaApplication = false,
     languageDesired = 'EN-US',
     hmiDisplayLanguageDesired = 'EN-US',
-    appHMIType = { "DEFAULT" },
+    isMediaApplication = true,
+    appHMIType = { "MEDIA" },
     appID = "0001",
     fullAppID = "0000001",
     deviceInfo =
@@ -73,10 +83,10 @@ local appParams = {
       minorVersion = 0
     },
     appName = "Test Application1",
-    isMediaApplication = false,
     languageDesired = 'EN-US',
     hmiDisplayLanguageDesired = 'EN-US',
-    appHMIType = { "DEFAULT" },
+    isMediaApplication = true,
+    appHMIType = { "MEDIA" },
     appID = "0001",
     fullAppID = "0000001",
     deviceInfo =
@@ -91,8 +101,12 @@ local appParams = {
 }
 
 --[[ Local Functions ]]
-local function activateApp1()
-  common.mobile.getSession(2):ExpectNotification("OnHMIStatus"):Times(0)
+local function activateApp1(pReactivate)
+  if nil == pReactivate then
+    common.mobile.getSession(2):ExpectNotification("OnHMIStatus"):Times(0)
+  else
+    common.mobile.getSession(2):ExpectNotification("OnHMIStatus")
+  end
   common.app.activate(1)
 end
 
@@ -105,11 +119,22 @@ end
 local function deactivateApp2()
   common.mobile.getSession(1):ExpectNotification("OnHMIStatus"):Times(0)
   local app2HMIStatusParams = {
-    hmiLevel = "BACKGROUND",
-    audioStreamingState = "NOT_AUDIBLE",
+    hmiLevel = "LIMITED",
+    audioStreamingState = "AUDIBLE",
     systemContext = "MAIN"
   }
   common.deactivateApp(2, app2HMIStatusParams)
+end
+
+local function deactivateApp1()
+  local app2HMIStatusParams = {
+    hmiLevel = "LIMITED",
+    audioStreamingState = "AUDIBLE",
+    systemContext = "MAIN"
+  }
+
+  common.mobile.getSession(2):ExpectNotification("OnHMIStatus"):Times(0)
+  common.deactivateApp(1, app2HMIStatusParams)
 end
 
 local function exitApp2()
@@ -118,7 +143,7 @@ local function exitApp2()
 end
 
 local function reActivateApp2()
-  common.mobile.getSession(1):ExpectNotification("OnHMIStatus"):Times(0)
+  common.mobile.getSession(1):ExpectNotification("OnHMIStatus")
   common.app.activate(2)
 end
 
@@ -131,9 +156,11 @@ runner.Step("Register App1 from device 1", common.registerAppEx, {1, appParams[1
 runner.Step("Register App2 from device 2", common.registerAppEx, {2, appParams[2], 2})
 
 runner.Title("Test")
-runner.Step("Activate App 1", activateApp1)
+runner.Step("Activate App 1. AppHMIType = " .. tostring(appParams[1].appHMIType[1]), activateApp1)
 runner.Step("Activate App 2", activateApp2)
 runner.Step("Deactivate App 2", deactivateApp2)
+runner.Step("Activate App 1 once again", activateApp1, {1})
+runner.Step("Deactivate App 1", deactivateApp1)
 runner.Step("Exit App 2", exitApp2)
 runner.Step("Activate App 2 again", reActivateApp2)
 
