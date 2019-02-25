@@ -35,7 +35,7 @@ local appParams = {
   [1] = { appName   = "Test Application",
           appID     = "0001",
           fullAppID = "0000001",
-          TtsName   = {
+          ttsName   = {
             {
               text ="TtsName",
               type ="TEXT"
