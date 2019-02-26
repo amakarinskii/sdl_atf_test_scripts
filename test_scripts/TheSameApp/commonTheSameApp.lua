@@ -95,6 +95,21 @@ function common.registerAppEx(pAppId, pAppParams, pMobConnId)
     end)
 end
 
+function common.registerAppExNegative(pAppId, pAppParams, pMobConnId)
+  local appParams = common.app.getParams(pAppId)
+  for k, v in pairs(pAppParams) do
+    appParams[k] = v
+  end
+  local session = common.mobile.createSession(pAppId, pMobConnId)
+  session:StartService(7)
+  :Do(function()
+      local corId = session:SendRPC("RegisterAppInterface", appParams)
+      common.hmi.getConnection():ExpectNotification("BasicCommunication.OnAppRegistered"):Times(0)
+      session:ExpectResponse(corId, { success = false, resultCode = "DISALLOWED" })
+    end)
+end
+
+
 function common.deactivateApp(pAppId, pNotifParams)
   common.getHMIConnection():SendNotification("BasicCommunication.OnAppDeactivated",
     { appID = common.getHMIAppId(pAppId)})
