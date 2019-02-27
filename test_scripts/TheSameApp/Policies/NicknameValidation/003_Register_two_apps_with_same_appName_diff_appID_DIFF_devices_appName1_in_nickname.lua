@@ -1,19 +1,22 @@
 ---------------------------------------------------------------------------------------------------
 -- Proposal:
 -- https://github.com/smartdevicelink/sdl_evolution/blob/master/proposals/0204-same-app-from-multiple-devices.md
--- Description: Registration of two mobile applications with the same appName and different appIDs from different mobile
--- devices
+-- Description: Registration of two mobile apps from different devices having different appIDs and same appNames.
+-- App_1 uses name from its "nickname" field,
+-- App_2 has no "nickname"
 --   Precondition:
--- 1) SDL and HMI are started
--- 2) Mobile №1 and №2 are connected to SDL
---   In case:
--- 1) Mobile №1 sends RegisterAppInterface request (with all mandatories) to SDL
--- 2) Mobile №2 sends RegisterAppInterface request (with all mandatories) with same appName and different appID to SDL
---   SDL does:
--- 1) Send RegisterAppInterface(resultCode = SUCCESS) response to Mobile №1
--- 2) Send RegisterAppInterface(resultCode = SUCCESS) response to Mobile №2
--- 3) Send first OnAppRegistered notification to HMI
--- 4) Send second OnAppRegistered notification to HMI
+-- 1) PT contains entity ( appID = 1, nicknames = "Test Application" )
+-- 2) SDL and HMI are started
+-- 3) Mobile №1 and №2 are connected to SDL
+--   Steps:
+-- 1) Mobile №1 sends RegisterAppInterface request (appID = 1, appName = "Test Application") to SDL
+--   CheckSDL:
+--     SDL sends RegisterAppInterface response( resultCode = SUCCESS  ) to Mobile №1
+--     BasicCommunication.OnAppRegistered(...) notification to HMI
+-- 2) Mobile №2 sends RegisterAppInterface request (appID = 2, appName = "Test Application") to SDL
+--   CheckSDL:
+--     SDL sends RegisterAppInterface response( resultCode = SUCCESS  ) to Mobile №2
+--     BasicCommunication.OnAppRegistered(...) notification to HMI
 ---------------------------------------------------------------------------------------------------
 --[[ Required Shared libraries ]]
 local runner = require('user_modules/script_runner')
@@ -45,7 +48,6 @@ local function setNickname()
   local pt = utils.jsonFileToTable(preloadedFile)
 
   pt.policy_table.functional_groupings["DataConsent-2"].rpcs = json.null
-
   pt.policy_table.app_policies["0000001"] = utils.cloneTable(pt.policy_table.app_policies.default)
   pt.policy_table.app_policies["0000001"].nicknames = { "Test Application" }
   utils.tableToJsonFile(pt, preloadedFile)

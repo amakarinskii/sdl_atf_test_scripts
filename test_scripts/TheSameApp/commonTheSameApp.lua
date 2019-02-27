@@ -95,6 +95,20 @@ function common.registerAppEx(pAppId, pAppParams, pMobConnId)
     end)
 end
 
+function common.registerAppFromSameDevice(pAppId, pAppParams, pMobConnId, pResultCode)
+  local appParams = common.app.getParams(pAppId)
+  for k, v in pairs(pAppParams) do
+    appParams[k] = v
+  end
+
+  local session = common.mobile.createSession(pAppId, pMobConnId)
+  session:StartService(7)
+  :Do(function()
+      local corId = session:SendRPC("RegisterAppInterface", appParams)
+      session:ExpectResponse(corId, { success = false, resultCode = pResultCode })
+    end)
+end
+
 function common.registerAppExNegative(pAppId, pAppParams, pMobConnId)
   local appParams = common.app.getParams(pAppId)
   for k, v in pairs(pAppParams) do
@@ -123,7 +137,7 @@ common.getMobileSession(pAppId):ExpectNotification("OnHMIStatus",
   { hmiLevel = "NONE", audioStreamingState = "NOT_AUDIBLE", systemContext = "MAIN"})
 end
 
-function common.changeRegistrationSuccess(pAppId, pParams)
+function common.changeRegistrationPositive(pAppId, pParams)
   local cid = common.mobile.getSession(pAppId):SendRPC("ChangeRegistration", pParams)
 
   common.hmi.getConnection():ExpectRequest("VR.ChangeRegistration", {
@@ -155,6 +169,12 @@ function common.changeRegistrationSuccess(pAppId, pParams)
     end)
 
   common.mobile.getSession(pAppId):ExpectResponse(cid, { success = true, resultCode = "SUCCESS" })
+end
+
+function common.changeRegistrationNegative(pAppId, pParams, pResultCode)
+  local cid = common.mobile.getSession(pAppId):SendRPC("ChangeRegistration", pParams)
+  common.mobile.getSession(pAppId):ExpectResponse(cid, { success = false, resultCode = pResultCode })
+  common.hmi.getConnection():ExpectNotification("BasicCommunication.OnAppRegistered"):Times(0)
 end
 
 return common
