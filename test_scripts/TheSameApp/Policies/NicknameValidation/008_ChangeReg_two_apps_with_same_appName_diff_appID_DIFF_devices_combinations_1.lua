@@ -64,7 +64,7 @@ local function setNickname()
   pt.policy_table.app_policies["0000001"]  = utils.cloneTable(pt.policy_table.app_policies.default)
   pt.policy_table.app_policies["0000001"].nicknames  = { "Test Application", "Test Application 2" }
   pt.policy_table.app_policies["00000022"] = utils.cloneTable(pt.policy_table.app_policies.default)
-  pt.policy_table.app_policies["00000022"].nicknames = { "Test Application", "Test Application", "Test Application 3" }
+  pt.policy_table.app_policies["00000022"].nicknames = { "Test Application", "Test Application 2", "Test Application 3" }
   utils.tableToJsonFile(pt, preloadedFile)
 end
 
