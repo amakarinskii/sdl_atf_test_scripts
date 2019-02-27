@@ -42,7 +42,7 @@ local changeRegParams = {
       {
         text ="SyncProxyTester",
         type ="TEXT"
-      },
+      }
     },
     ngnMediaScreenAppName ="SPT",
     vrSynonyms = {
@@ -60,7 +60,7 @@ runner.Step("Register App1 from device 1", common.registerAppEx, {1, appParams[1
 runner.Step("Register App2 from device 2", common.registerAppEx, {2, appParams[2], 2})
 
 runner.Title("Test")
-runner.Step("ChangeRegistration for App2 from device 2", common.changeRegistrationSuccess, {2, changeRegParams[1]})
+runner.Step("ChangeRegistration for App2 from device 2", common.changeRegistrationPositive, {2, changeRegParams[1]})
 
 runner.Title("Postconditions")
 runner.Step("Remove mobile devices", common.clearMobDevices, {devices})

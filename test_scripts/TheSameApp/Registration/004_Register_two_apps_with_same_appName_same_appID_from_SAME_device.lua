@@ -27,21 +27,6 @@ local appParams = {
 	[1] = { appName = "Test Application", appID = "0001", fullAppID = "0000001" }
 }
 
---[[ Local Functions ]]
-local function registerAppFromSameDevice(pAppId, pAppParams, pMobConnId)
-  local appParams = common.app.getParams(pAppId)
-  for k, v in pairs(pAppParams) do
-    appParams[k] = v
-  end
-
-  local session = common.mobile.createSession(pAppId, pMobConnId)
-  session:StartService(7)
-  :Do(function()
-      local corId = session:SendRPC("RegisterAppInterface", appParams)
-      session:ExpectResponse(corId, { success = false, resultCode = "APPLICATION_REGISTERED_ALREADY" })
-    end)
-end
-
 --[[ Scenario ]]
 runner.Title("Preconditions")
 runner.Step("Clean environment", common.preconditions)
@@ -49,8 +34,9 @@ runner.Step("Start SDL and HMI", common.start)
 runner.Step("Connect two mobile devices to SDL", common.connectMobDevices, {devices})
 
 runner.Title("Test")
-runner.Step("Register App1 from device 1", common.registerAppEx,      {1, appParams[1], 1})
-runner.Step("Register App2 from device 1", registerAppFromSameDevice, {2, appParams[1], 1})
+runner.Step("Register App1 from device 1", common.registerAppEx, {1, appParams[1], 1})
+runner.Step("Register App2 from device 1",
+                               common.registerAppFromSameDevice, {2, appParams[1], 1, "APPLICATION_REGISTERED_ALREADY"})
 
 runner.Title("Postconditions")
 runner.Step("Remove mobile devices", common.clearMobDevices, {devices})

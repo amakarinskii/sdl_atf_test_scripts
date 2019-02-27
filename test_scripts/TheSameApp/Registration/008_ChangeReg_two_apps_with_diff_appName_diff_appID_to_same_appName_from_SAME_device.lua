@@ -50,13 +50,6 @@ local changeRegParams = {
   }
 }
 
---[[ Local Functions ]]
-local function changeRegistrationNeg(pAppId, pParams)
-  local cid = common.mobile.getSession(pAppId):SendRPC("ChangeRegistration", pParams)
-  common.mobile.getSession(pAppId):ExpectResponse(cid, { success = false, resultCode = "DUPLICATE_NAME" })
-  common.hmi.getConnection():ExpectNotification("BasicCommunication.OnAppRegistered"):Times(0)
-end
-
 --[[ Scenario ]]
 runner.Title("Preconditions")
 runner.Step("Clean environment", common.preconditions)
@@ -66,7 +59,8 @@ runner.Step("Register App1 from device 1", common.registerAppEx, {1, appParams[1
 runner.Step("Register App2 from device 2", common.registerAppEx, {2, appParams[2], 1})
 
 runner.Title("Test")
-runner.Step("ChangeRegistration for App2 from the SAME device.", changeRegistrationNeg, {2, changeRegParams[1]})
+runner.Step("ChangeRegistration for App2 from the SAME device.",
+             common.changeRegistrationNegative, {2, changeRegParams[1]}, "DUPLICATE_NAME")
 
 runner.Title("Postconditions")
 runner.Step("Remove mobile devices", common.clearMobDevices, {devices})
