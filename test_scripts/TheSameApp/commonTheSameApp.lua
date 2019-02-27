@@ -109,7 +109,7 @@ function common.registerAppFromSameDevice(pAppId, pAppParams, pMobConnId, pResul
     end)
 end
 
-function common.registerAppExNegative(pAppId, pAppParams, pMobConnId)
+function common.registerAppExNegative(pAppId, pAppParams, pMobConnId, pResultCode)
   local appParams = common.app.getParams(pAppId)
   for k, v in pairs(pAppParams) do
     appParams[k] = v
@@ -119,10 +119,9 @@ function common.registerAppExNegative(pAppId, pAppParams, pMobConnId)
   :Do(function()
       local corId = session:SendRPC("RegisterAppInterface", appParams)
       common.hmi.getConnection():ExpectNotification("BasicCommunication.OnAppRegistered"):Times(0)
-      session:ExpectResponse(corId, { success = false, resultCode = "DISALLOWED" })
+      session:ExpectResponse(corId, { success = false, resultCode = pResultCode })
     end)
 end
-
 
 function common.deactivateApp(pAppId, pNotifParams)
   common.getHMIConnection():SendNotification("BasicCommunication.OnAppDeactivated",

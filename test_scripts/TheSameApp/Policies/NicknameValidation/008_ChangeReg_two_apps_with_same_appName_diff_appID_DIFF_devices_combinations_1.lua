@@ -61,7 +61,7 @@ local function setNickname()
   local pt = utils.jsonFileToTable(preloadedFile)
 
   pt.policy_table.functional_groupings["DataConsent-2"].rpcs = json.null
-  pt.policy_table.app_policies["0000001"] = utils.cloneTable(pt.policy_table.app_policies.default)
+  pt.policy_table.app_policies["0000001"]  = utils.cloneTable(pt.policy_table.app_policies.default)
   pt.policy_table.app_policies["0000001"].nicknames  = { "Test Application", "Test Application 2" }
   pt.policy_table.app_policies["00000022"] = utils.cloneTable(pt.policy_table.app_policies.default)
   pt.policy_table.app_policies["00000022"].nicknames = { "Test Application", "Test Application", "Test Application 3" }

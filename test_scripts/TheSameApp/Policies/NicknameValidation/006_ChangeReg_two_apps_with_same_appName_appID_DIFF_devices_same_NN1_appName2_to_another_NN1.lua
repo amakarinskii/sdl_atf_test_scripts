@@ -40,10 +40,15 @@ local appParams = {
 }
 
 local changeRegParams = {
-  [2] = {
+  [1] = {
     language ="EN-US",
     hmiDisplayLanguage ="EN-US",
     appName ="Test Application 2"
+  },
+  [2] = {
+    language ="EN-US",
+    hmiDisplayLanguage ="EN-US",
+    appName ="Test Application 3"
   }
 }
 
@@ -55,7 +60,7 @@ local function setNickname()
 
   pt.policy_table.functional_groupings["DataConsent-2"].rpcs = json.null
   pt.policy_table.app_policies["0000001"] = utils.cloneTable(pt.policy_table.app_policies.default)
-  pt.policy_table.app_policies["0000001"].nicknames  = { "Test Application 1", "Test Application 2" }
+  pt.policy_table.app_policies["0000001"].nicknames  = { "Test Application", "Test Application 2" }
   utils.tableToJsonFile(pt, preloadedFile)
 end
 
@@ -69,7 +74,9 @@ runner.Step("Register App1 from device 2", common.registerAppEx, {1, appParams[1
 runner.Step("Register App2 from device 2", common.registerAppEx, {2, appParams[2], 2})
 
 runner.Title("Test")
-runner.Step("Change registration of App2 from device 2", common.changeRegistrationSuccess, {2, changeRegParams[2]})
+runner.Step("Change registration of App1 from device 1", common.changeRegistrationPositive, {1, changeRegParams[1]})
+runner.Step("Change registration of App2 from device 2", common.changeRegistrationNegative, {2, changeRegParams[2],
+                                                                                               "DISALLOWED"})
 
 runner.Title("Postconditions")
 runner.Step("Remove mobile devices", common.clearMobDevices, {devices})

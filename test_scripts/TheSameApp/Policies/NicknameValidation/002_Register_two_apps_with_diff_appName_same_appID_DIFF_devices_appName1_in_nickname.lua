@@ -61,7 +61,7 @@ runner.Step("Connect two mobile devices to SDL", common.connectMobDevices, {devi
 
 runner.Title("Test")
 runner.Step("Register App1 from device 1", common.registerAppEx,         {1, appParams[1], 1})
-runner.Step("Register App2 from device 2", common.registerAppExNegative, {2, appParams[2], 2})
+runner.Step("Register App2 from device 2", common.registerAppExNegative, {2, appParams[2], 2, "DISALLOWED"})
 
 runner.Title("Postconditions")
 runner.Step("Remove mobile devices", common.clearMobDevices, {devices})

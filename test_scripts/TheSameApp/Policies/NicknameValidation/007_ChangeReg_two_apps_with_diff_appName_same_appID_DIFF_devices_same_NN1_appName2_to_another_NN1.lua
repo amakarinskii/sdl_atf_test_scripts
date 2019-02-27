@@ -35,15 +35,20 @@ local devices = {
 }
 
 local appParams = {
-	[1] = { appName = "Test Application",  appID = "0001", fullAppID = "0000001" },
+	[1] = { appName = "Test Application",   appID = "0001", fullAppID = "0000001" },
 	[2] = { appName = "Test Application 2", appID = "0001", fullAppID = "0000001" }
 }
 
 local changeRegParams = {
-  [2] = {
+  [1] = {
     language ="EN-US",
     hmiDisplayLanguage ="EN-US",
     appName ="Test Application"
+  },
+  [2] = {
+    language ="EN-US",
+    hmiDisplayLanguage ="EN-US",
+    appName ="Test Application 3"
   }
 }
 
@@ -70,8 +75,9 @@ runner.Step("Register App1 from device 2", common.registerAppEx, {1, appParams[1
 runner.Step("Register App2 from device 2", common.registerAppEx, {2, appParams[2], 2})
 
 runner.Title("Test")
-runner.Step("Change registration of App2 from device 2",
-             common.changeRegistrationNegative, {2, changeRegParams[2], "DISALLOWED"})
+runner.Step("Change registration of App1 from device 1", common.changeRegistrationPositive, {1, changeRegParams[1]})
+runner.Step("Change registration of App2 from device 2", common.changeRegistrationNegative, {2, changeRegParams[2],
+                                                                                                "DISALLOWED"})
 
 runner.Title("Postconditions")
 runner.Step("Remove mobile devices", common.clearMobDevices, {devices})

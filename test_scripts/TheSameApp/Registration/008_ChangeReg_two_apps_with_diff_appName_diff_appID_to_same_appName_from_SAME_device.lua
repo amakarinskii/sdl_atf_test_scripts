@@ -60,7 +60,7 @@ runner.Step("Register App2 from device 2", common.registerAppEx, {2, appParams[2
 
 runner.Title("Test")
 runner.Step("ChangeRegistration for App2 from the SAME device.",
-             common.changeRegistrationNegative, {2, changeRegParams[1]}, "DUPLICATE_NAME")
+                              common.changeRegistrationNegative, {2, changeRegParams[1]}, "DUPLICATE_NAME")
 
 runner.Title("Postconditions")
 runner.Step("Remove mobile devices", common.clearMobDevices, {devices})

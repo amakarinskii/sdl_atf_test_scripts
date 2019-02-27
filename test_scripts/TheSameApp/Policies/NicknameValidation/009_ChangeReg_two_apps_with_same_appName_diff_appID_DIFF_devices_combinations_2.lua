@@ -60,7 +60,7 @@ local function setNickname()
   local pt = utils.jsonFileToTable(preloadedFile)
 
   pt.policy_table.functional_groupings["DataConsent-2"].rpcs = json.null
-  pt.policy_table.app_policies["0000001"] = utils.cloneTable(pt.policy_table.app_policies.default)
+  pt.policy_table.app_policies["0000001"]  = utils.cloneTable(pt.policy_table.app_policies.default)
   pt.policy_table.app_policies["0000001"].nicknames  = { "Test Application",   "Test Application 2" }
   pt.policy_table.app_policies["00000022"] = utils.cloneTable(pt.policy_table.app_policies.default)
   pt.policy_table.app_policies["00000022"].nicknames = { "Test Application 2", "Test Application 3" }
@@ -78,8 +78,8 @@ runner.Step("Register App2 from device #2", common.registerAppEx, {2, appParams[
 
 runner.Title("Test")
 runner.Step("Change registration of App1 from device 1", common.changeRegistrationPositive, {1, changeRegParams[1]})
-runner.Step("Change registration App2 from device #2",
-             common.changeRegistrationNegative, {2, changeRegParams[2], "DISALLOWED"})
+runner.Step("Change registration App2 from device #2",   common.changeRegistrationNegative, {2, changeRegParams[2],
+                                                                                                "DISALLOWED"})
 
 runner.Title("Postconditions")
 runner.Step("Remove mobile devices", common.clearMobDevices, {devices})
