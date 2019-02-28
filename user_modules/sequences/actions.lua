@@ -6,7 +6,6 @@ local mobile = require("mobile_connection")
 local tcp = require("tcp_connection")
 local file_connection = require("file_connection")
 local mobileSession = require("mobile_session")
-local json = require("modules/json")
 local commonFunctions = require("user_modules/shared_testcases/commonFunctions")
 local commonPreconditions = require('user_modules/shared_testcases/commonPreconditions')
 local commonSteps = require("user_modules/shared_testcases/commonSteps")
@@ -24,7 +23,8 @@ local m = {
   ptu = {},
   app = {},
   run = {},
-  sdl = {}
+  sdl = {},
+  json = utils.json
 }
 
 
@@ -129,7 +129,7 @@ local function getPTUFromPTS()
     pTbl.policy_table.device_data = nil
     pTbl.policy_table.module_meta = nil
     pTbl.policy_table.usage_and_error_counts = nil
-    pTbl.policy_table.functional_groupings["DataConsent-2"].rpcs = json.null
+    pTbl.policy_table.functional_groupings["DataConsent-2"].rpcs = utils.json.null
     pTbl.policy_table.module_config.preloaded_pt = nil
     pTbl.policy_table.module_config.preloaded_date = nil
   end
@@ -483,6 +483,10 @@ function m.sdl.getPathToFileInStorage(pFileName, pAppId)
     .. utils.getDeviceMAC() .. "/" .. pFileName
 end
 
+function m.sdl.getSDLIniParameter(pParamName)
+  return commonFunctions:read_parameter_from_smart_device_link_ini(pParamName)
+end
+
 --[[ @setSDLConfigParameter: change original value of parameter in SDL .ini file
 --! @parameters:
 --! pParamName - name of the parameter
@@ -490,7 +494,7 @@ end
 --! @return: none
 --]]
 function m.sdl.setSDLIniParameter(pParamName, pParamValue)
-  originalValuesInSDLIni[pParamName] = commonFunctions:read_parameter_from_smart_device_link_ini(pParamName)
+  originalValuesInSDLIni[pParamName] = m.sdl.getSDLIniParameter(pParamName)
   commonFunctions:write_parameter_to_smart_device_link_ini(pParamName, pParamValue)
 end
 
@@ -506,7 +510,7 @@ end
 
 function m.sdl.getPreloadedPTPath()
   if not m.sdl.preloadedPTPath then
-    local preloadedPTName = commonFunctions:read_parameter_from_smart_device_link_ini("PreloadedPT")
+    local preloadedPTName = m.sdl.getSDLIniParameter("PreloadedPT")
     m.sdl.preloadedPTPath = commonPreconditions:GetPathToSDL() .. preloadedPTName
   end
   return m.sdl.preloadedPTPath
@@ -514,14 +518,14 @@ end
 
 function m.sdl.backupPreloadedPT()
   if not m.sdl.isPreloadedPTBackuped then
-    commonPreconditions:BackupFile(m.sdl.getPreloadedPTPath())
+    commonPreconditions:BackupFile(m.sdl.getSDLIniParameter("PreloadedPT"))
     m.sdl.isPreloadedPTBackuped = true
   end
 end
 
 function m.sdl.restorePreloadedPT()
   if m.sdl.isPreloadedPTBackuped then
-    commonPreconditions:RestoreFile(m.sdl.getPreloadedPTPath())
+    commonPreconditions:RestoreFile(m.sdl.getSDLIniParameter("PreloadedPT"))
   end
 end
 
