@@ -504,6 +504,36 @@ function m.sdl.restoreSDLIniParameters()
   end
 end
 
+function m.sdl.getPreloadedPTPath()
+  if not m.sdl.preloadedPTPath then
+    local preloadedPTName = commonFunctions:read_parameter_from_smart_device_link_ini("PreloadedPT")
+    m.sdl.preloadedPTPath = commonPreconditions:GetPathToSDL() .. preloadedPTName
+  end
+  return m.sdl.preloadedPTPath
+end
+
+function m.sdl.backupPreloadedPT()
+  if not m.sdl.isPreloadedPTBackuped then
+    commonPreconditions:BackupFile(m.sdl.getPreloadedPTPath())
+    m.sdl.isPreloadedPTBackuped = true
+  end
+end
+
+function m.sdl.restorePreloadedPT()
+  if m.sdl.isPreloadedPTBackuped then
+    commonPreconditions:RestoreFile(m.sdl.getPreloadedPTPath())
+  end
+end
+
+function m.sdl.getPreloadedPT()
+  return utils.jsonFileToTable(m.sdl.getPreloadedPTPath())
+end
+
+function m.sdl.setPreloadedPT(pPreloadedPTTable)
+  m.sdl.backupPreloadedPT()
+  utils.tableToJsonFile(pPreloadedPTTable, m.sdl.getPreloadedPTPath())
+end
+
 --[[ Functions of ATF extension ]]
 
 function event_dispatcher:DeleteConnection(connection)
@@ -709,6 +739,7 @@ end
 function m.postconditions()
   StopSDL()
   m.sdl.restoreSDLIniParameters()
+  m.sdl.restorePreloadedPT()
 end
 
 --[[ @getMobileSession: get mobile session
