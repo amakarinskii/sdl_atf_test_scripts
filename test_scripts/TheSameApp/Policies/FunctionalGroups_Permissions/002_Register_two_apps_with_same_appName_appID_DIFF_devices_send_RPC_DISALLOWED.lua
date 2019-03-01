@@ -54,8 +54,8 @@ local TestGroup_2 = {
   }
 }
 local sendLocationParams = { locationName = "Location Name", longitudeDegrees = 1.1, latitudeDegrees = 1.1 }
-local addCommandParams   = { cmdID  = 111,  menuParams = {menuName = "Play"}}
-local addSubMenuParams   = { menuID = 222, menuName = "Test" }
+local addCommandParams   = { cmdID  = 111, menuParams = {menuName = "Play"}}
+local addSubMenuParams   = { menuID = 222, menuName   = "Test" }
 local uiAddSubmenuParams = { menuID = 222 }
 
 local preloadedPT = commonFunctions:read_parameter_from_smart_device_link_ini("PreloadedPT")
@@ -69,7 +69,7 @@ local function createNewGroup(pAppId, pTestGroupName, pTestGroup)
 
   pt.policy_table.functional_groupings[pTestGroupName] = pTestGroup
   pt.policy_table.app_policies[pAppId] = utils.cloneTable(pt.policy_table.app_policies.default)
-  pt.policy_table.app_policies[pAppId].groups = {"TestGroup_1", "Notifications-RC" }
+  pt.policy_table.app_policies[pAppId].groups = {pTestGroupName, "Notifications-RC" }
 
   utils.tableToJsonFile(pt, preloadedFile)
 end

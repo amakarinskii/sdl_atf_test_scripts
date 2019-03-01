@@ -77,7 +77,7 @@ local function createNewGroup(pAppId, pTestGroupName, pTestGroup)
 
   pt.policy_table.functional_groupings[pTestGroupName] = pTestGroup
   pt.policy_table.app_policies[pAppId] = utils.cloneTable(pt.policy_table.app_policies.default)
-  pt.policy_table.app_policies[pAppId].groups = {"TestGroup_1", "Notifications-RC" }
+  pt.policy_table.app_policies[pAppId].groups = {pTestGroupName, "Notifications-RC" }
 
   utils.tableToJsonFile(pt, preloadedFile)
 end
