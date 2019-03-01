@@ -15,6 +15,7 @@ local m = {}
 m.timeout = 2000
 
 --[[ Functions ]]
+m.json = json
 
 --[[ @jsonFileToTable: convert .json file to table
 --! @parameters:
