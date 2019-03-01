@@ -65,9 +65,6 @@ local uiAddSubmenuParams = { menuID = 222 }
 
 local preloadedPT = commonFunctions:read_parameter_from_smart_device_link_ini("PreloadedPT")
 
--- local pAddress = {countryName = "Some address"}
-
-
 --[[ Local Functions ]]
 local function createNewGroup(pAppId, pTestGroupName, pTestGroup)
   local preloadedFile = commonPreconditions:GetPathToSDL() .. preloadedPT
