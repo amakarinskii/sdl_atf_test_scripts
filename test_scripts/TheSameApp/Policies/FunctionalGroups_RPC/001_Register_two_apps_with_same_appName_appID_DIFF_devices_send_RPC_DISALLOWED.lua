@@ -40,12 +40,12 @@ local appParams = {
 }
 
 local TestGroup_1 = {
-        rpcs = {
-          AddCommand = {
-            hmi_levels = { "BACKGROUND", "FULL", "LIMITED", "NONE" }
-          }
-        }
-      }
+  rpcs = {
+    AddCommand = {
+      hmi_levels = { "BACKGROUND", "FULL", "LIMITED", "NONE" }
+    }
+  }
+}
 
 local preloadedPT = commonFunctions:read_parameter_from_smart_device_link_ini("PreloadedPT")
 

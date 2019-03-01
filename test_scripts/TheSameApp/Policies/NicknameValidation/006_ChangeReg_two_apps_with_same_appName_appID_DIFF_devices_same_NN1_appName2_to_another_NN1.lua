@@ -20,8 +20,6 @@
 --[[ Required Shared libraries ]]
 local runner = require('user_modules/script_runner')
 local common = require('test_scripts/TheSameApp/commonTheSameApp')
-local commonFunctions = require("user_modules/shared_testcases/commonFunctions")
-local commonPreconditions = require('user_modules/shared_testcases/commonPreconditions')
 local json = require("modules/json")
 local utils = require('user_modules/utils')
 
@@ -53,21 +51,16 @@ local changeRegParams = {
 }
 
 --[[ Local Functions ]]
-local function setNickname()
-  local preloadedPT = commonFunctions:read_parameter_from_smart_device_link_ini("PreloadedPT")
-  local preloadedFile = commonPreconditions:GetPathToSDL() .. preloadedPT
-  local pt = utils.jsonFileToTable(preloadedFile)
-
+local function setNickname(pt)
   pt.policy_table.functional_groupings["DataConsent-2"].rpcs = json.null
   pt.policy_table.app_policies["0000001"] = utils.cloneTable(pt.policy_table.app_policies.default)
   pt.policy_table.app_policies["0000001"].nicknames  = { "Test Application", "Test Application 2" }
-  utils.tableToJsonFile(pt, preloadedFile)
 end
 
 --[[ Scenario ]]
 runner.Title("Preconditions")
 runner.Step("Clean environment", common.preconditions)
-runner.Step("Update of the default PT", setNickname)
+runner.Step("Update of the default PT", common.modifyPreloadedPt, {setNickname})
 runner.Step("Start SDL and HMI", common.start)
 runner.Step("Connect two mobile devices to SDL", common.connectMobDevices, {devices})
 runner.Step("Register App1 from device 2", common.registerAppEx, {1, appParams[1], 1})
