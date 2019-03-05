@@ -84,7 +84,7 @@ local function modificationOfPreloadedPT(pPolicyTable)
   pPolicyTable.policy_table.app_policies[appParams[1].fullAppID].groups = {"Base-4"}
 end
 
-function connectMobDevices(pDevices)
+local function connectMobDevices(pDevices)
   for i = 1, #pDevices do
     common.connectMobDevice(i, pDevices[i], false)
   end
