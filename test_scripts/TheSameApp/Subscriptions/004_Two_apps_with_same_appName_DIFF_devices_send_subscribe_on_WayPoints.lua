@@ -37,18 +37,21 @@ local appParams = {
 	[2] = { appName = "Test Application", appID = "00022", fullAppID = "00000022" }
 }
 
-local wayPoints = {
+local pWayPoints = {
   locationName = "Location Name",
   coordinate   = { latitudeDegrees  = 1.1, longitudeDegrees = 1.1 }
 }
 
 --[[ Local Functions ]]
-local function subscribeOnButton(pAppId, pButtonName)
+local function sendSubscribeWayPoints(pAppId)
   local mobSession = common.mobile.getSession(pAppId)
-  local cid = mobSession:SendRPC("SubscribeWayPoints", {buttonName = pButtonName})
-    common.hmi.getConnection():ExpectRequest("Navigation.SubscribeWayPoints")--,
-    common.hmi.getConnection():SendResponse("Navigation.SubscribeWayPoints")--,
-        -- {name = pButtonName, isSubscribed = true, appID = common.app.getHMIId(pAppId) })
+  local cid = mobSession:SendRPC("SubscribeWayPoints", {})
+    common.hmi.getConnection():ExpectRequest("Navigation.SubscribeWayPoints")
+
+    :Do(function(_,data)
+         common.hmi.getConnection():SendResponse(data.id, data.method, "SUCCESS",{})
+      end)
+
     mobSession:ExpectResponse(cid, { success = true, resultCode = "SUCCESS" })
     mobSession:ExpectNotification("OnHashChange")
 end
@@ -63,14 +66,24 @@ local function sendOnWayPointChange(pAppId1, pAppId2, pNumberOfDevicesSubscribed
   elseif pNumberOfDevicesSubscribed == "none" then pTime1 = 0; pTime2 = 0
   end
 
-  common.hmi.getConnection():SendNotification("Navigation.OnWayPointChange", {wayPoints, appID = common.app.getHMIId(pAppId1) })
-  mobSession1:ExpectNotification("OnWayPointChange",{wayPoints}):Times(pTime1)
-  mobSession2:ExpectNotification("OnWayPointChange",{wayPoints}):Times(pTime2)
+  common.hmi.getConnection():SendNotification("Navigation.OnWayPointChange", {wayPoints = pWayPoints})
+  mobSession1:ExpectNotification("OnWayPointChange",{wayPoints = pWayPoints}):Times(pTime1)
+  mobSession2:ExpectNotification("OnWayPointChange",{wayPoints = pWayPoints}):Times(pTime2)
+end
+
+local function modificationOfPreloadedPT(pt)
+  pt.policy_table.functional_groupings["DataConsent-2"].rpcs = common.json.null
+
+  pt.policy_table.app_policies[appParams[1].fullAppID] = common.cloneTable(pt.policy_table.app_policies["default"])
+  pt.policy_table.app_policies[appParams[1].fullAppID].groups = {"Base-4", "WayPoints"}
+  pt.policy_table.app_policies[appParams[2].fullAppID] = common.cloneTable(pt.policy_table.app_policies["default"])
+  pt.policy_table.app_policies[appParams[2].fullAppID].groups = {"Base-4", "WayPoints"}
 end
 
 --[[ Scenario ]]
 runner.Title("Preconditions")
 runner.Step("Clean environment", common.preconditions)
+runner.Step("Prepare preloaded PT", common.modifyPreloadedPt, {modificationOfPreloadedPT})
 runner.Step("Start SDL and HMI", common.start)
 runner.Step("Connect two mobile devices to SDL", common.connectMobDevices, {devices})
 runner.Step("Register App1 from device 1", common.registerAppEx, {1, appParams[1], 1})
@@ -78,14 +91,12 @@ runner.Step("Register App2 from device 2", common.registerAppEx, {2, appParams[2
 runner.Step("Activate App 1", common.app.activate, { 1 })
 
 runner.Title("Test")
-runner.Step("App1 from Mobile 1 requests Subscribe on WayPoints", subscribeOnButton, {1, "WayPoints"})
+runner.Step("App1 from Mobile 1 requests Subscribe on WayPoints", sendSubscribeWayPoints, { 1 })
 runner.Step("HMI send OnWayPointChange for WayPoints",      sendOnWayPointChange, {1, 2, "one"})
 
-runner.Step("Activate App 2", common.app.activate, { 2 })
-runner.Step("App2 from Mobile 2 requests Subscribe on WayPoints", subscribeOnButton, {2, "WayPoints"})
-runner.Step("HMI send OnWayPointChange for WayPoints",      sendOnWayPointChange, {2, 1, "two"})
-
-runner.Step("App2 from Mobile 2 requests Subscribe on OK", subscribeOnButton, {2, "OK"})
+-- runner.Step("Activate App 2", common.app.activate, { 2 })
+-- runner.Step("App2 from Mobile 2 requests Subscribe on WayPoints", sendSubscribeWayPoints, { 2 })
+-- runner.Step("HMI send OnWayPointChange for WayPoints",      sendOnWayPointChange, {2, 1, "two"})
 
 runner.Title("Postconditions")
 runner.Step("Remove mobile devices", common.clearMobDevices, {devices})
