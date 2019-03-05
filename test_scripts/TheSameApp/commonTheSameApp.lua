@@ -179,4 +179,62 @@ function common.getSystemCapability(pAppId, pResultCode)
   mobileSession:ExpectResponse(cid, {success = isSuccess, resultCode = pResultCode})
 end
 
+function common.sendLocation(pAppId, pResultCode)
+  local isSuccess = false
+  if pResultCode == "SUCCESS" then
+    isSuccess = true
+  end
+
+  local mobileSession = common.mobile.getSession(pAppId)
+  local corId = mobileSession:SendRPC("SendLocation", {
+      longitudeDegrees = 1.1,
+      latitudeDegrees = 1.1
+    })
+  if pResultCode == "SUCCESS" then
+    common.hmi.getConnection():ExpectRequest("Navigation.SendLocation")
+    :Do(function(_,data)
+        common.hmi.getConnection():SendResponse(data.id, data.method, "SUCCESS", {})
+      end)
+  end
+  mobileSession:ExpectResponse(corId, {success = isSuccess , resultCode = pResultCode})
+end
+
+function common.show(pAppId, pResultCode)
+  local isSuccess = false
+  if pResultCode == "SUCCESS" then
+    isSuccess = true
+  end
+
+  local mobileSession = common.mobile.getSession(pAppId)
+  local corId = mobileSession:SendRPC("Show", {mediaClock = "00:00:01", mainField1 = "Show1"})
+  if pResultCode == "SUCCESS" then
+    common.hmi.getConnection():ExpectRequest("UI.Show")
+    :Do(function(_,data)
+        common.hmi.getConnection():SendResponse(data.id, "UI.Show", "SUCCESS", {})
+      end)
+  end
+  mobileSession:ExpectResponse(corId, { success = isSuccess, resultCode = pResultCode})
+end
+
+function common.funcGroupConsentForApp(pPromptName, pIsAllowed, pAppId)
+  local corId = common.hmi.getConnection():SendRequest("SDL.GetListOfPermissions", { appID = common.app.getHMIId(pAppId) })
+  common.hmi.getConnection():ExpectResponse(corId,
+    {
+      result = {
+        method = "SDL.GetListOfPermissions",
+        code = 0,
+        allowedFunctions = {{name = pPromptName}}
+      },
+    })
+  :Do(function(_,data)
+      local functionalGroupID = data.result.allowedFunctions[1].id -- !!!!!!!!!!!!!!!!!Dangerous!!!!!!!!!!!!!!!!!!!!!!!!!!
+      common.hmi.getConnection():SendNotification("SDL.OnAppPermissionConsent",
+        {
+          appID = common.app.getHMIId(pAppId),
+          source = "GUI",
+          consentedFunctions = {{name = pPromptName, allowed = pIsAllowed, id = functionalGroupID} }
+        })
+    end)
+end
+
 return common
