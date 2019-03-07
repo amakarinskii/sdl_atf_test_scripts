@@ -1,10 +1,30 @@
 ---------------------------------------------------------------------------------------------------
 -- Proposal:
 -- https://github.com/smartdevicelink/sdl_evolution/blob/master/proposals/0204-same-app-from-multiple-devices.md
--- Description: Consent of two different mobile devices with registered the same mobile applications
+-- Description: User consent for multiple functional groups of two consented mobile devices
+--    with the same mobile applications registered
 -- Precondition:
+-- 1)SDL and HMI are started
+-- 2)Mobile №1 and №2 are connected to SDL and are consented
+-- 3)RPC SendLocation exists only in Group001 according policies and requires user consent ConsentGroup001
+--   RPC Show exists only in Group002 according policies and requires user consent ConsentGroup001
+-- 4)Application App1 is registered on Mobile №1 and Mobile №2 (two copies of one application)
 -- In case:
+-- 1)Application App1 from Mobile №1 sends to SDL valid SendLocation RPC request
+--   Application App1 from Mobile №2 sends to SDL valid Show RPC request
+-- 2)User allows ConsentGroup001 for App1 on Mobile №1
+--   Application App1 from Mobile №1 sends to SDL valid SendLocation RPC request
+--   Application App1 from Mobile №2 sends to SDL valid Show RPC request
+-- 3)User allows ConsentGroup001 for App1 on Mobile №2 and disallows it for App1 on Mobile №1
+--   Application App1 from Mobile №1 sends to SDL valid SendLocation RPC request
+--   Application App1 from Mobile №2 sends to SDL valid Show RPC request
 -- SDL does:
+-- 1)Send SendLocation(resultCode = DISALLOWED) response to Mobile №1
+--   Send Show(resultCode = DISALLOWED) response to Mobile №2
+-- 2)Send SendLocation(resultCode = SUCCESS) response to Mobile №1
+--   Send Show(resultCode = DISALLOWED) response to Mobile №2
+-- 3)Send SendLocation(resultCode = USER_DISALLOWED) response to Mobile №1
+--   Send Show(resultCode = SUCCESS) response to Mobile №2
 ---------------------------------------------------------------------------------------------------
 --[[ Required Shared libraries ]]
 local runner = require('user_modules/script_runner')
@@ -68,8 +88,10 @@ local function modificationOfPreloadedPT(pPolicyTable)
   local pt = pPolicyTable.policy_table
 
   for funcGroupName in pairs(pt.functional_groupings) do
-    pt.functional_groupings[funcGroupName].rpcs["SendLocation"] = nil
-    pt.functional_groupings[funcGroupName].rpcs["Show"] = nil
+    if type(pt.functional_groupings[funcGroupName].rpcs) == "table" then
+      pt.functional_groupings[funcGroupName].rpcs["SendLocation"] = nil
+      pt.functional_groupings[funcGroupName].rpcs["Show"] = nil
+    end
   end
 
   pt.functional_groupings["DataConsent-2"].rpcs = common.json.null
@@ -95,13 +117,16 @@ runner.Title("Test")
 runner.Step("Disallowed SendLocation (Group001) from App1 from device 1", common.sendLocation, {1, "DISALLOWED"})
 runner.Step("Disallowed Show (Group002) from App1 from device 2", common.show, {2, "DISALLOWED"})
 
-runner.Step("Allow group Group001 and Group002 for App1 on device 1", common.funcGroupConsentForApp, {"ConsentGroup001",true, 1})
+runner.Step("Allow group Group001 and Group002 for App1 on device 1", common.funcGroupConsentForApp,
+    {{{name = "ConsentGroup001", allowed = true}}, 1})
 runner.Step("Succeed SendLocation (Group001) from App1 from device 1", common.sendLocation, {1, "SUCCESS"})
 runner.Step("Disallowed Show (Group002) from App1 from device 2", common.show, {2, "DISALLOWED"})
 
-runner.Step("Disallow group Group001 and Group002 for App1 on device 1", common.funcGroupConsentForApp, {"ConsentGroup001",false, 1})
-runner.Step("Allow group Group001 and Group002 for App1 on device 2", common.funcGroupConsentForApp, {"ConsentGroup001",true, 2})
-runner.Step("Disallowed SendLocation (Group001) from App1 from device 1", common.sendLocation, {1, "DISALLOWED"})
+runner.Step("Disallow group Group001 and Group002 for App1 on device 1", common.funcGroupConsentForApp,
+    {{{name = "ConsentGroup001", allowed = false}}, 1})
+runner.Step("Allow group Group001 and Group002 for App1 on device 2", common.funcGroupConsentForApp,
+    {{{name = "ConsentGroup001", allowed = true}}, 2})
+runner.Step("User disallowed SendLocation (Group001) from App1 from device 1", common.sendLocation, {1, "USER_DISALLOWED"})
 runner.Step("Succeed Show  (Group002) from App1 from device 2", common.show, {2, "SUCCESS"})
 
 runner.Title("Postconditions")

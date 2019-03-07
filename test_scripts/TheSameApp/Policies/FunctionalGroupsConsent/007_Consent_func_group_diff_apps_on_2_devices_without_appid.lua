@@ -1,13 +1,35 @@
 ---------------------------------------------------------------------------------------------------
 -- Proposal:
 -- https://github.com/smartdevicelink/sdl_evolution/blob/master/proposals/0204-same-app-from-multiple-devices.md
--- Description: Consent of two different mobile devices with registered the same mobile applications
+-- Description: User consent for functional groups without application specification
+--    for two consented mobile devices
 -- Precondition:
-
+-- 1)SDL and HMI are started
+-- 2)Mobile №1 and №2 are connected to SDL and are consented
+-- 3)RPC Show exists only in Group001 according policies and requires user consent ConsentGroup001
+-- 4)Application App1 is registered on Mobile №1 and Mobile №2 (two copies of one application)
+--   Application App2 is registered on Mobile №1
 -- In case:
-
+-- 1)User allows ConsentGroup001 for all applications (HMI sends SDL.OnAppPermissionConsent without appId)
+--   All applications (App1 and App2 on Mobile №1 and App1 on Mobile №1) send to SDL valid Show RPC request
+-- 2)Register application App2 on Mobile №2
+--   (it is application which had been already registered at moment of allowing of ConsentGroup001 but on other device)
+--   Application App2 Mobile №2 sends to SDL valid Show RPC request
+-- 3)Register application App3 on Mobile №2 (new application)
+--   Application App3 Mobile №2 sends to SDL valid Show RPC request
+-- 4)User disallows ConsentGroup001 for all applications (HMI sends SDL.OnAppPermissionConsent without appId)
+--   All applications (App1 and App2 on Mobile №1 and App1 on Mobile №1) send to SDL valid Show RPC request
 -- SDL does:
-
+-- 1)Send Show(resultCode = SUCCESS) response to App1 on Mobile №1
+--   Send Show(resultCode = SUCCESS) response to App1 on Mobile №2
+--   Send Show(resultCode = SUCCESS) response to App2 on Mobile №1
+-- 2)Send Show(resultCode = SUCCESS) response to App2 on Mobile №2
+-- 3)Send Show(resultCode = SUCCESS) response to App3 on Mobile №2
+-- 4)Send Show(resultCode = USER_DISALLOWED) response to App1 on Mobile №1
+--   Send Show(resultCode = USER_DISALLOWED) response to App1 on Mobile №2
+--   Send Show(resultCode = USER_DISALLOWED) response to App2 on Mobile №1
+--   Send Show(resultCode = USER_DISALLOWED) response to App2 on Mobile №2
+--   Send Show(resultCode = USER_DISALLOWED) response to App3 on Mobile №1
 ---------------------------------------------------------------------------------------------------
 --[[ Required Shared libraries ]]
 local runner = require('user_modules/script_runner')
@@ -95,7 +117,7 @@ local ptFuncGroup = {
   Group001 = {
     user_consent_prompt = "ConsentGroup001",
     rpcs = {
-      SendLocation = {
+      Show = {
         hmi_levels = {"BACKGROUND", "FULL", "LIMITED", "NONE"}
       }
     }
@@ -107,7 +129,9 @@ local function modificationOfPreloadedPT(pPolicyTable)
   local pt = pPolicyTable.policy_table
 
   for funcGroupName in pairs(pt.functional_groupings) do
-    pt.functional_groupings[funcGroupName].rpcs["SendLocation"] = nil
+    if type(pt.functional_groupings[funcGroupName].rpcs) == "table" then
+      pt.functional_groupings[funcGroupName].rpcs["Show"] = nil
+    end
   end
 
   pt.functional_groupings["DataConsent-2"].rpcs = common.json.null
@@ -130,23 +154,25 @@ runner.Step("Register App2 from device 1", common.registerAppEx, {2, appParams[2
 runner.Step("Register App1 from device 1", common.registerAppEx, {3, appParams[1], 2})
 
 runner.Title("Test")
-runner.Step("Allow group Group001 for all App", common.funcGroupConsentForApp, {"ConsentGroup001",true})
-runner.Step("Succeed SendLocation from App1 from device 1", common.sendLocation, {1, "SUCCESS"})
-runner.Step("Succeed SendLocation from App2 from device 1", common.sendLocation, {2, "SUCCESS"})
-runner.Step("Succeed SendLocation from App1 from device 2", common.sendLocation, {3, "SUCCESS"})
+runner.Step("Allow group Group001 for all App", common.funcGroupConsentForApp,
+    {{{name = "ConsentGroup001", allowed = true}}})
+runner.Step("Succeed Show from App1 from device 1", common.Show, {1, "SUCCESS"})
+runner.Step("Succeed Show from App2 from device 1", common.Show, {2, "SUCCESS"})
+runner.Step("Succeed Show from App1 from device 2", common.Show, {3, "SUCCESS"})
 
 runner.Step("Register App2 from device 2", common.registerAppEx, {4, appParams[2], 2})
-runner.Step("Succeed SendLocation from App2 from device 2", common.sendLocation, {4, "SUCCESS"})
+runner.Step("Succeed Show from App2 from device 2", common.Show, {4, "SUCCESS"})
 
 runner.Step("Register App3 from device 2", common.registerAppEx, {5, appParams[3], 2})
-runner.Step("Succeed SendLocation from App3 from device 2", common.sendLocation, {5, "SUCCESS"})
+runner.Step("Succeed Show from App3 from device 2", common.Show, {5, "SUCCESS"})
 
-runner.Step("Allow group Group001 for all App", common.funcGroupConsentForApp, {"ConsentGroup001",false})
-runner.Step("Disallowed SendLocation from App1 from device 1", common.sendLocation, {1, "DISALLOWED"})
-runner.Step("Disallowed SendLocation from App2 from device 1", common.sendLocation, {2, "DISALLOWED"})
-runner.Step("Disallowed SendLocation from App1 from device 2", common.sendLocation, {3, "DISALLOWED"})
-runner.Step("Disallowed SendLocation from App2 from device 2", common.sendLocation, {4, "DISALLOWED"})
-runner.Step("Disallowed SendLocation from App3 from device 2", common.sendLocation, {4, "DISALLOWED"})
+runner.Step("Disallow group Group001 for all App", common.funcGroupConsentForApp,
+    {{{name = "ConsentGroup001", allowed = false}}})
+runner.Step("User disallowed Show from App1 from device 1", common.Show, {1, "USER_DISALLOWED"})
+runner.Step("User disallowed Show from App2 from device 1", common.Show, {2, "USER_DISALLOWED"})
+runner.Step("User disallowed Show from App1 from device 2", common.Show, {3, "USER_DISALLOWED"})
+runner.Step("User disallowed Show from App2 from device 2", common.Show, {4, "USER_DISALLOWED"})
+runner.Step("User disallowed Show from App3 from device 2", common.Show, {5, "USER_DISALLOWED"})
 
 runner.Title("Postconditions")
 runner.Step("Remove mobile devices", common.clearMobDevices, {devices})

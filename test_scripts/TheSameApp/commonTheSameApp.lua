@@ -17,6 +17,7 @@ local common = actions
 common.getDeviceName = utils.getDeviceName
 common.getDeviceMAC = utils.getDeviceMAC
 common.cloneTable = utils.cloneTable
+common.isTableContains = utils.isTableContains
 
 --[[ Common Functions ]]
 function common.start()
@@ -216,23 +217,44 @@ function common.show(pAppId, pResultCode)
   mobileSession:ExpectResponse(corId, { success = isSuccess, resultCode = pResultCode})
 end
 
-function common.funcGroupConsentForApp(pPromptName, pIsAllowed, pAppId)
-  local corId = common.hmi.getConnection():SendRequest("SDL.GetListOfPermissions", { appID = common.app.getHMIId(pAppId) })
-  common.hmi.getConnection():ExpectResponse(corId,
-    {
-      result = {
-        method = "SDL.GetListOfPermissions",
-        code = 0,
-        allowedFunctions = {{name = pPromptName}}
-      },
-    })
+function common.funcGroupConsentForApp(pPrompts, pAppId)
+
+  local function findFunctionalGroupId(pAllowedFunctions, pGroupName)
+    for _, allowedFunc in pairs(pAllowedFunctions) do
+      if allowedFunc.name == pGroupName then
+        return allowedFunc.id
+      end
+    end
+    return nil
+  end
+
+  local hmiAppID = nil
+  if pAppId then
+    hmiAppID = common.app.getHMIId(pAppId)
+    if not hmiAppID then
+      common.run.fail("Unknown mobile application number:" .. pAppId)
+    end
+  end
+
+  local corId = common.hmi.getConnection():SendRequest("SDL.GetListOfPermissions", { appID = hmiAppID})
+  common.hmi.getConnection():ExpectResponse(corId)
   :Do(function(_,data)
-      local functionalGroupID = data.result.allowedFunctions[1].id -- !!!!!!!!!!!!!!!!!Dangerous!!!!!!!!!!!!!!!!!!!!!!!!!!
+      local consentedFunctions = common.cloneTable(pPrompts)
+      local allowedFunctions = data.result.allowedFunctions
+      for _, promptItem in pairs(consentedFunctions) do
+        local groupId = findFunctionalGroupId(allowedFunctions, promptItem.name)
+        if not groupId then
+          common.run.fail("Unknown user consent prompt:" .. promptItem.name)
+          return
+        end
+        promptItem.id = groupId
+      end
+
       common.hmi.getConnection():SendNotification("SDL.OnAppPermissionConsent",
         {
-          appID = common.app.getHMIId(pAppId),
+          appID = hmiAppID,
           source = "GUI",
-          consentedFunctions = {{name = pPromptName, allowed = pIsAllowed, id = functionalGroupID} }
+          consentedFunctions = consentedFunctions
         })
     end)
 end
