@@ -20,8 +20,6 @@
 --[[ Required Shared libraries ]]
 local runner = require('user_modules/script_runner')
 local common = require('test_scripts/TheSameApp/commonTheSameApp')
-local commonFunctions = require("user_modules/shared_testcases/commonFunctions")
-local commonPreconditions = require('user_modules/shared_testcases/commonPreconditions')
 local json = require("modules/json")
 local utils = require('user_modules/utils')
 
@@ -40,43 +38,30 @@ local appParams = {
 }
 
 local TestGroup_1 = {
-        rpcs = {
-          AddCommand   = { hmi_levels = { "FULL" }},
-          AddSubMenu   = { hmi_levels = { "BACKGROUND", "LIMITED" }},
-          SendLocation = { hmi_levels = { "NONE" }}
-        }
-      }
--- local address = {countryName           = "countryName",
---                  countryCode           = "countryCode",
---                  postalCode            = "postalCode",
---                  administrativeArea    = "administrativeArea",
---                  subAdministrativeArea = "subAdministrativeArea",
---                  locality              = "locality",
---                  subLocality           = "subLocality",
---                  thoroughfare          = "thoroughfare",
---                  subThoroughfare       = "subThoroughfare"}
+  rpcs = {
+    AddCommand   = { hmi_levels = { "FULL" }},
+    AddSubMenu   = { hmi_levels = { "BACKGROUND", "LIMITED" }},
+    SendLocation = { hmi_levels = { "NONE" }}
+  }
+}
 
--- local sendLocationParams = { locationName = "Location Name", address}
-
-local sendLocationParams = { locationName = "Location Name", longitudeDegrees = 1.1, latitudeDegrees = 1.1 }
-local addCommandParams   = { cmdID  = 111, menuParams = {menuName = "Play"}}
-local addSubMenuParams   = { menuID = 222, menuName = "Test" }
-local uiAddSubmenuParams = { menuID = 222 }
-
-local preloadedPT = commonFunctions:read_parameter_from_smart_device_link_ini("PreloadedPT")
+local locationParams      = { locationName = "Location Name", longitudeDegrees = 1.1, latitudeDegrees = 1.1 }
+local addCommandParams    = { cmdID  = 111, menuParams = {menuName = "Play"}}
+local addSubMenuParams    = { menuID = 222, menuName = "Test" }
+local reqAddSubmenuParams = { menuID = 222, menuParams = {menuName = "Test"} }
 
 --[[ Local Functions ]]
-local function createNewGroup(pAppId, pTestGroupName, pTestGroup)
-  local preloadedFile = commonPreconditions:GetPathToSDL() .. preloadedPT
-  local pt = utils.jsonFileToTable(preloadedFile)
+local function createNewGroup(pAppId, pTestGroupName, pTestGroup, pPolicyTable)
+  local pt = pPolicyTable
 
   pt.policy_table.functional_groupings["DataConsent-2"].rpcs = json.null
-
   pt.policy_table.functional_groupings[pTestGroupName] = pTestGroup
   pt.policy_table.app_policies[pAppId] = utils.cloneTable(pt.policy_table.app_policies.default)
-  pt.policy_table.app_policies[pAppId].groups = {pTestGroupName, "Notifications-RC" }
+  pt.policy_table.app_policies[pAppId].groups = { pTestGroupName, "Notifications-RC" }
+end
 
-  utils.tableToJsonFile(pt, preloadedFile)
+local function modificationOfPreloadedPT(pPolicyTable)
+  createNewGroup( appParams[1].fullAppID, "TestGroup_1", TestGroup_1, pPolicyTable)
 end
 
 local function sendRPCPositive(pAppId, pPrefix, pRPCName, pRPCParams, pRequestParams)
@@ -96,7 +81,7 @@ end
 --[[ Scenario ]]
 runner.Title("Preconditions")
 runner.Step("Clean environment", common.preconditions)
-runner.Step("Update of the default PT", createNewGroup, { appParams[1].fullAppID, "TestGroup_1", TestGroup_1 })
+runner.Step("Prepare preloaded PT", common.modifyPreloadedPt, {modificationOfPreloadedPT})
 runner.Step("Start SDL and HMI", common.start)
 runner.Step("Connect two mobile devices to SDL", common.connectMobDevices, {devices})
 runner.Step("Register App1 from device 1", common.registerAppEx, { 1, appParams[1], 1 })
@@ -104,30 +89,30 @@ runner.Step("Register App2 from device 2", common.registerAppEx, { 2, appParams[
 
 runner.Title("Test")
 runner.Step("App1 sends 'SendLocation' RPC from Mobile 1, SUCCESS",   sendRPCPositive,
-  { 1, "Navigation.", "SendLocation", sendLocationParams })
+              { 1, "Navigation.", "SendLocation", locationParams, locationParams })
 runner.Step("App1 sends 'AddCommand' RPC from Mobile 1, DISALLOWED",  sendRPCNegative,
-  { 1, "AddCommand",  addCommandParams })
+              { 1, "AddCommand",  addCommandParams })
 
 runner.Step("Activate App 1", common.app.activate, { 1 })
 runner.Step("App1 sends 'AddCommand' RPC from Mobile 1, SUCCESS",     sendRPCPositive,
-  { 1, "UI.", "AddCommand", addCommandParams })
+              { 1, "UI.", "AddCommand", addCommandParams, addCommandParams })
 runner.Step("App1 sends 'SendLocation' RPC from Mobile 1, DISALLOWED",sendRPCNegative,
-  { 1, "SendLocation", sendLocationParams })
+              { 1, "SendLocation", locationParams })
 
 runner.Step("App2 sends 'SendLocation' RPC from Mobile 2, SUCCESS",   sendRPCPositive,
-  { 2, "Navigation.", "SendLocation", sendLocationParams })
-runner.Step("App1 sends 'AddCommand' RPC from Mobile 2, DISALLOWED",  sendRPCNegative,
-  { 2, "AddCommand", addCommandParams })
+              { 2, "Navigation.", "SendLocation", locationParams, locationParams })
+runner.Step("App2 sends 'AddCommand' RPC from Mobile 2, DISALLOWED",  sendRPCNegative,
+              { 2, "AddCommand", addCommandParams })
 
 runner.Step("Activate App 2", common.app.activate, { 2 })
 runner.Step("App1 sends 'AddSubMenu' RPC from Mobile 1, SUCCESS",     sendRPCPositive,
-  { 1, "UI.", "AddSubMenu", addSubMenuParams, uiAddSubmenuParams })
+              { 1, "UI.", "AddSubMenu", addSubMenuParams, reqAddSubmenuParams })
 runner.Step("App1 sends 'SendLocation' RPC from Mobile 1, DISALLOWED",sendRPCNegative,
-  { 1, "SendLocation", sendLocationParams })
-runner.Step("App1 sends 'AddCommand' RPC from Mobile 2, SUCCESS",     sendRPCPositive,
-  { 2, "UI.", "AddCommand", addCommandParams })
-runner.Step("App1 sends 'SendLocation' RPC from Mobile 1, DISALLOWED",sendRPCNegative,
-  { 2, "SendLocation", sendLocationParams })
+              { 1, "SendLocation", locationParams })
+runner.Step("App2 sends 'AddCommand' RPC from Mobile 2, SUCCESS",     sendRPCPositive,
+              { 2, "UI.", "AddCommand", addCommandParams, addCommandParams })
+runner.Step("App2 sends 'SendLocation' RPC from Mobile 2, DISALLOWED",sendRPCNegative,
+              { 2, "SendLocation", locationParams })
 
 runner.Title("Postconditions")
 runner.Step("Remove mobile devices", common.clearMobDevices, {devices})
