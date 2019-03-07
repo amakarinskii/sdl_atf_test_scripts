@@ -160,6 +160,15 @@ function m.run.wait(pTimeOut)
   m.run.runAfter(function() m.hmi.getConnection():RaiseEvent(event, "Delayed event") end, pTimeOut)
 end
 
+--[[ @fail: fail test step
+--! @parameters:
+--! pCause - message with reason of the fail
+--! @return: none
+--]]
+function m.run.fail(pCause)
+  test:FailTestCase(pCause)
+end
+
 --[[ Functions of init submodule ]]
 
 function m.init.SDL()
