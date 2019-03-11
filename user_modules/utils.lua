@@ -15,6 +15,7 @@ local m = {}
 m.timeout = 2000
 
 --[[ Functions ]]
+m.json = json
 
 --[[ @jsonFileToTable: convert .json file to table
 --! @parameters:
@@ -75,6 +76,72 @@ function m.cloneTable(pTbl)
   return copy
 end
 
+-- Get table size on top level
+local function getTableSize(T)
+  local count = 0
+  for _ in pairs(T) do count = count + 1 end
+  return count
+end
+
+--Compare 2 tables
+function m.isTableEqual(table1, table2)
+  -- compare value types
+  local type1 = type(table1)
+  local type2 = type(table2)
+  if type1 ~= type2 then return false end
+  if type1 ~= 'table' and type2 ~= 'table' then return table1 == table2 end
+  local size_tab1 = getTableSize(table1)
+  local size_tab2 = getTableSize(table2)
+  if size_tab1 ~= size_tab2 then return false end
+
+  --compare arrays
+  if json.isArray(table1) and json.isArray(table2) then
+    local found_element
+    local copy_table2 = commonFunctions:cloneTable(table2)
+    for i, _  in pairs(table1) do
+      found_element = false
+      for j, _ in pairs(copy_table2) do
+        if commonFunctions:is_table_equal(table1[i], copy_table2[j]) then
+          copy_table2[j] = nil
+          found_element = true
+          break
+        end
+      end
+      if found_element == false then
+        break
+      end
+    end
+    if getTableSize(copy_table2) == 0 then
+      return true
+    else
+      return false
+    end
+  end
+
+  -- compare tables by elements
+  local already_compared = {} --optimization
+  for _,v1 in pairs(table1) do
+    for k2,v2 in pairs(table2) do
+      if not already_compared[k2] and commonFunctions:is_table_equal(v1,v2) then
+        already_compared[k2] = true
+      end
+    end
+  end
+  if size_tab2 ~= getTableSize(already_compared) then
+    return false
+  end
+  return true
+end
+
+function m.isTableContains(table, value)
+  if not table then return false end
+  for _,val in pairs(table) do
+    if val == value then return true end
+  end
+  return false
+end
+
+--- [DEPRECATED]
 --[[ @wait: delay test step for specific timeout
 --! @parameters:
 --! pTimeOut - time to wait in ms
@@ -93,16 +160,18 @@ end
 --! @parameters: none
 --! @return: name of the device
 --]]
-function m.getDeviceName()
-  return config.mobileHost .. ":" .. config.mobilePort
+function m.getDeviceName(host, port)
+  if not host then host = config.mobileHost end
+  if not port then port = config.mobilePort end
+  return host .. ":" .. port
 end
 
 --[[ @getDeviceMAC: provide device MAC address
 --! @parameters: none
 --! @return: MAC address of the device
 --]]
-function m.getDeviceMAC()
-  local cmd = "echo -n " .. m.getDeviceName() .. " | sha256sum | awk '{printf $1}'"
+function m.getDeviceMAC(host, port)
+  local cmd = "echo -n " .. m.getDeviceName(host, port) .. " | sha256sum | awk '{printf $1}'"
   local handle = io.popen(cmd)
   local result = handle:read("*a")
   handle:close()
@@ -216,6 +285,14 @@ function m.isFileExist(pFile)
     file:close()
     return true
   end
+end
+
+function m.addNetworkInterface(pId, pAddress)
+  os.execute("ifconfig lo:" .. pId .." " .. pAddress)
+end
+
+function m.deleteNetworkInterface(pId)
+  os.execute("ifconfig lo:" .. pId .." down")
 end
 
 return m
