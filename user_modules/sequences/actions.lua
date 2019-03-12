@@ -109,7 +109,12 @@ local function getPTUFromPTS()
   local ptsFileName = commonFunctions:read_parameter_from_smart_device_link_ini("SystemFilesPath") .. "/"
     .. commonFunctions:read_parameter_from_smart_device_link_ini("PathToSnapshot")
   if utils.isFileExist(ptsFileName) then
+
+  print("------in getPTUFromPTS in IF -------")
     pTbl = utils.jsonFileToTable(ptsFileName)
+
+  print("----------------pTbl ", pTbl)
+
   else
     utils.cprint(35, "PTS file was not found, PreloadedPT is used instead")
     local appConfigFolder = commonFunctions:read_parameter_from_smart_device_link_ini("AppConfigFolder")
@@ -307,21 +312,25 @@ function m.mobile.deleteSession(pAppId)
 end
 
 function m.mobile.getApps(pMobConnId)
-  if pMobConnId == nil then
-    return utils.cloneTable(test.mobileSession)
-  end
-
   local mobileSessions = {}
-  for _, mobileSession in ipairs(test.mobileSession) do
-    if getMobConnectionFromSession(mobileSession) == test.mobileConnections[pMobConnId] then
-      table.insert(mobileSessions, mobileSession)
+
+  for idx, mobSession in pairs(test.mobileSession) do
+    if pMobConnId == nil
+      or getMobConnectionFromSession(mobSession) == test.mobileConnections[pMobConnId] then
+        mobileSessions[idx] = mobSession
     end
   end
+
   return mobileSessions
 end
 
 function m.mobile.getAppsCount(pMobConnId)
- return #m.mobile.getApps(pMobConnId)
+  local sesions = m.mobile.getApps(pMobConnId)
+  local count = 0
+  for _, _ in pairs(sesions) do
+    count = count + 1
+  end
+ return count
 end
 
 --[[ Functions of ptu submodule ]]
@@ -350,7 +359,7 @@ function m.ptu.policyTableUpdate(pPTUpdateFunc, pExpNotificationFunc)
       m.hmi.getConnection():SendNotification("BasicCommunication.OnSystemRequest",
         { requestType = "PROPRIETARY", fileName = ptsFileName })
       local ptuTable = getPTUFromPTS()
-      for i = 1, m.mobile.getAppsCount() do
+      for i, _ in pairs(m.mobile. ()) do
         ptuTable.policy_table.app_policies[m.app.getParams(i).fullAppID] = m.ptu.getAppData(i)
       end
       if pPTUpdateFunc then
@@ -359,7 +368,7 @@ function m.ptu.policyTableUpdate(pPTUpdateFunc, pExpNotificationFunc)
       utils.tableToJsonFile(ptuTable, ptuFileName)
       local event = m.run.createEvent()
       m.hmi.getConnection():ExpectEvent(event, "PTU event")
-      for id = 1, m.mobile.getAppsCount() do
+      for id, _ in pairs(m.mobile.getApps()) do
         m.mobile.getSession(id):ExpectNotification("OnSystemRequest", { requestType = "PROPRIETARY" })
         :Do(function()
             if not pExpNotificationFunc then
