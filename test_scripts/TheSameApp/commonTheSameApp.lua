@@ -259,4 +259,189 @@ function common.funcGroupConsentForApp(pPrompts, pAppId)
     end)
 end
 
+function common.getModuleControlData(module_type)
+  local out = { moduleType = module_type }
+  if module_type == "CLIMATE" then
+    out.climateControlData = {
+      fanSpeed = 30,
+      desiredTemperature = {
+        unit = "CELSIUS",
+        value = 11.5
+      },
+      acEnable = true,
+      circulateAirEnable = true,
+      autoModeEnable = true,
+      defrostZone = "FRONT",
+      dualModeEnable = true,
+      acMaxEnable = true,
+      ventilationMode = "BOTH",
+      heatedSteeringWheelEnable = true,
+      heatedWindshieldEnable = true,
+      heatedRearWindowEnable = true,
+      heatedMirrorsEnable = true
+    }
+  elseif module_type == "RADIO" then
+    out.radioControlData = {
+      frequencyInteger = 1,
+      frequencyFraction = 2,
+      band = "AM",
+      hdChannel = 1,
+      radioEnable = true,
+      hdRadioEnable = true,
+    }
+  elseif module_type == "LIGHT" then
+    out.lightControlData = {
+      lightState = {
+        {
+          id = "FRONT_LEFT_HIGH_BEAM",
+          status = "ON",
+          density = 0.5,
+          color = {
+            red = 5,
+            green = 15,
+            blue = 20
+          }
+        }
+      }
+    }
+  end
+  return out
+end
+
+local function sortModules(pModulesArray)
+  local function f(a, b)
+    if a.moduleType and b.moduleType then
+      return a.moduleType < b.moduleType
+    elseif a and b then
+      return a < b
+    end
+    return 0
+  end
+  table.sort(pModulesArray, f)
+end
+
+function common.expectOnRCStatusOnMobile(pAppId, pExpData)
+  common.mobile.getSession(pAppId):ExpectNotification("OnRCStatus")
+  :ValidIf(function(_, d)
+     sortModules(pExpData.freeModules)
+     sortModules(pExpData.allocatedModules)
+     sortModules(d.payload.freeModules)
+     sortModules(d.payload.allocatedModules)
+     return compareValues(pExpData, d.payload, "payload")
+   end)
+ :ValidIf(function(_, d)
+   if d.payload.allowed == nil  then
+     return false, "OnRCStatus notification doesn't contains 'allowed' parameter"
+   end
+   return true
+ end)
+end
+
+function common.expectOnRCStatusOnHMI(pExpDataTable)
+  local usedHmiAppIds = {}
+  local appCount = 0;
+  for _,_ in pairs(pExpDataTable) do
+    appCount = appCount + 1
+  end
+  common.hmi.getConnection():ExpectNotification("RC.OnRCStatus")
+  :ValidIf(function(_, d)
+      if d.params.allowed ~= nil then
+        return false, "RC.OnRCStatus notification contains unexpected 'allowed' parameter"
+      end
+
+      local hmiAppId = d.params.appID
+      usedHmiAppIds[hmiAppId] = true
+
+      if pExpDataTable[hmiAppId] and not usedHmiAppIds[hmiAppId] then
+        sortModules(pExpDataTable[hmiAppId].freeModules)
+        sortModules(pExpDataTable[hmiAppId].allocatedModules)
+        sortModules(d.params.freeModules)
+        sortModules(d.params.allocatedModules)
+        return compareValues(pExpDataTable[hmiAppId], d.params, "params")
+      else
+        local msg
+        if usedHmiAppIds[hmiAppId] then
+          msg = "To many occurrences of RC.OnRCStatus notification for hmiAppId: " .. hmiAppId
+        else
+          msg = "Unexpected RC.OnRCStatus notification for hmiAppId: " .. hmiAppId
+        end
+        return false, msg
+      end
+    end)
+  :Times(appCount)
+end
+
+function common.defineRAMode(pAllowed, pAccessMode)
+  common.hmi.getConnection():SendNotification("RC.OnRemoteControlSettings",
+      {allowed = pAllowed, accessMode = pAccessMode})
+  common.run.wait(common.minTimeout) -- workaround due to issue with SDL -> redundant OnHMIStatus notification is sent
+end
+
+local function successHmiRequestSetInteriorVehicleData(pAppId, pModuleControlData)
+  common.hmi.getConnection():ExpectRequest("RC.SetInteriorVehicleData", {
+    appID = common.app.getHMIId(pAppId),
+    moduleData = pModuleControlData
+  })
+  :Do(function(_, data)
+      common.hmi.getConnection():SendResponse(data.id, data.method, "SUCCESS", {
+        moduleData = pModuleControlData
+      })
+    end)
+end
+
+function common.rpcAllowed(pAppId, pModuleType)
+  local moduleControlData = common.getModuleControlData(pModuleType)
+  local mobSession = common.mobile.getSession(pAppId)
+  local cid = mobSession:SendRPC("SetInteriorVehicleData", {
+        moduleData = moduleControlData
+      })
+  successHmiRequestSetInteriorVehicleData(pAppId, moduleControlData)
+  mobSession:ExpectResponse(cid, { success = true, resultCode = "SUCCESS" })
+end
+
+function common.rpcAllowedWithConsent(pModuleType, pAppId)
+  local moduleControlData = common.getModuleControlData(pModuleType)
+  local mobSession = common.mobile.getSession(pAppId)
+  local cid = mobSession:SendRPC("SetInteriorVehicleData", {
+        moduleData = moduleControlData
+      })
+  common.hmi.getConnection():ExpectRequest("RC.GetInteriorVehicleDataConsent", {
+        appID = common.app.getHMIId(pAppId),
+        moduleType = pModuleType
+      })
+  :Do(function(_, data)
+      common.hmi.getConnection():SendResponse(data.id, data.method, "SUCCESS", {allowed = true})
+      successHmiRequestSetInteriorVehicleData(pAppId, moduleControlData)
+    end)
+  mobSession:ExpectResponse(cid, { success = true, resultCode = "SUCCESS" })
+end
+
+function common.rpcDenied(pModuleType, pAppId, pResultCode)
+  local moduleControlData = common.getModuleControlData(pModuleType)
+  local mobSession = common.mobile.getSession(pAppId)
+  local cid = mobSession:SendRPC("SetInteriorVehicleData", {
+        moduleData = moduleControlData
+      })
+  common.hmi.getConnection():ExpectRequest("RC.SetInteriorVehicleData", {}):Times(0)
+  mobSession:ExpectResponse(cid, { success = false, resultCode = pResultCode })
+end
+
+function common.rpcRejectWithConsent(pModuleType, pAppId)
+  local info = "The resource is in use and the driver disallows this remote control RPC"
+  local moduleControlData = common.getModuleControlData(pModuleType)
+  local mobSession = common.mobile.getSession(pAppId)
+  local cid = mobSession:SendRPC("SetInteriorVehicleData", {
+        moduleData = moduleControlData
+      })
+  common.hmi.getConnection():ExpectRequest("RC.GetInteriorVehicleDataConsent", {
+        appID = common.app.getHMIId(pAppId),
+        moduleType = pModuleType
+      })
+  :Do(function(_, data)
+      common.hmi.getConnection():SendResponse(data.id, data.method, "SUCCESS", {allowed = false})
+      common.hmi.getConnection():ExpectRequest("RC.SetInteriorVehicleData", {}):Times(0)
+    end)
+  mobSession:ExpectResponse(cid, { success = false, resultCode = "REJECTED", info = info })
+end
+
 return common
