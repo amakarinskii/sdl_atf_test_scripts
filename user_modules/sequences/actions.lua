@@ -14,6 +14,7 @@ local test = require("user_modules/dummy_connecttest")
 local expectations = require('expectations')
 local reporter = require("reporter")
 local utils = require("user_modules/utils")
+local SDL = require('SDL')
 
 --[[ Module ]]
 local m = {
@@ -172,8 +173,7 @@ end
 --[[ Functions of init submodule ]]
 
 function m.init.SDL()
-  test:runSDL()
-  local ret = commonFunctions:waitForSDLStart(test)
+  local ret = m.sdl.start()
   ret:Do(function()
       utils.cprint(35, "SDL started")
     end)
@@ -549,6 +549,25 @@ end
 function m.sdl.setPreloadedPT(pPreloadedPTTable)
   m.sdl.backupPreloadedPT()
   utils.tableToJsonFile(pPreloadedPTTable, m.sdl.getPreloadedPTPath())
+end
+
+function m.sdl.start()
+  test:runSDL()
+  return commonFunctions:waitForSDLStart(test)
+end
+
+function m.sdl.checkStatus()
+  return SDL:CheckStatusSDL()
+end
+
+function m.sdl.isRunning()
+  return SDL:CheckStatusSDL() == SDL.RUNNING
+end
+
+function m.sdl.stop()
+  event_dispatcher:ClearEvents()
+  test.expectations_list:Clear()
+  return SDL:StopSDL()
 end
 
 --[[ Functions of ATF extension ]]
