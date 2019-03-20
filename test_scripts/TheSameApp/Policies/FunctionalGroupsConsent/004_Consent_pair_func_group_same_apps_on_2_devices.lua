@@ -66,7 +66,7 @@ local appParams = {
 
 local ptFuncGroup = {
   Group001 = {
-    user_consent_prompt = "ConsentGroup001",
+    user_consent_prompt = "ConsentTwoGroups",
     rpcs = {
       SendLocation = {
         hmi_levels = {"BACKGROUND", "FULL", "LIMITED", "NONE"}
@@ -74,7 +74,7 @@ local ptFuncGroup = {
     }
   },
   Group002 = {
-    user_consent_prompt = "ConsentGroup001",
+    user_consent_prompt = "ConsentTwoGroups",
     rpcs = {
       Show = {
         hmi_levels = {"BACKGROUND", "FULL", "LIMITED", "NONE"}
@@ -118,14 +118,14 @@ runner.Step("Disallowed SendLocation (Group001) from App1 from device 1", common
 runner.Step("Disallowed Show (Group002) from App1 from device 2", common.show, {2, "DISALLOWED"})
 
 runner.Step("Allow group Group001 and Group002 for App1 on device 1", common.funcGroupConsentForApp,
-    {{{name = "ConsentGroup001", allowed = true}}, 1})
+    {{{name = "ConsentTwoGroups", allowed = true}}, 1})
 runner.Step("Succeed SendLocation (Group001) from App1 from device 1", common.sendLocation, {1, "SUCCESS"})
 runner.Step("Disallowed Show (Group002) from App1 from device 2", common.show, {2, "DISALLOWED"})
 
 runner.Step("Disallow group Group001 and Group002 for App1 on device 1", common.funcGroupConsentForApp,
-    {{{name = "ConsentGroup001", allowed = false}}, 1})
+    {{{name = "ConsentTwoGroups", allowed = false}}, 1})
 runner.Step("Allow group Group001 and Group002 for App1 on device 2", common.funcGroupConsentForApp,
-    {{{name = "ConsentGroup001", allowed = true}}, 2})
+    {{{name = "ConsentTwoGroups", allowed = true}}, 2})
 runner.Step("User disallowed SendLocation (Group001) from App1 from device 1", common.sendLocation, {1, "USER_DISALLOWED"})
 runner.Step("Succeed Show  (Group002) from App1 from device 2", common.show, {2, "SUCCESS"})
 

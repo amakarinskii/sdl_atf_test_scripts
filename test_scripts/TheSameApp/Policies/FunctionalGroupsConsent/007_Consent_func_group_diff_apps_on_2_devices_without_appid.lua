@@ -138,9 +138,12 @@ local function modificationOfPreloadedPT(pPolicyTable)
 
   pt.functional_groupings["Group001"] = ptFuncGroup.Group001
 
-  pt.app_policies[appParams[1].fullAppID] =
-      common.cloneTable(pt.app_policies["default"])
-  pt.app_policies[appParams[1].fullAppID].groups = {"Base-4", "Group001"}
+  local appPolicies = common.cloneTable(pt.app_policies["default"])
+  appPolicies.groups = {"Base-4", "Group001"}
+
+  pt.app_policies[appParams[1].fullAppID] = appPolicies
+  pt.app_policies[appParams[2].fullAppID] = common.cloneTable(appPolicies)
+  pt.app_policies[appParams[3].fullAppID] = common.cloneTable(appPolicies)
 end
 
 --[[ Scenario ]]
@@ -156,23 +159,23 @@ runner.Step("Register App1 from device 1", common.registerAppEx, {3, appParams[1
 runner.Title("Test")
 runner.Step("Allow group Group001 for all App", common.funcGroupConsentForApp,
     {{{name = "ConsentGroup001", allowed = true}}})
-runner.Step("Succeed Show from App1 from device 1", common.Show, {1, "SUCCESS"})
-runner.Step("Succeed Show from App2 from device 1", common.Show, {2, "SUCCESS"})
-runner.Step("Succeed Show from App1 from device 2", common.Show, {3, "SUCCESS"})
+runner.Step("Succeed Show from App1 from device 1", common.show, {1, "SUCCESS"})
+runner.Step("Succeed Show from App2 from device 1", common.show, {2, "SUCCESS"})
+runner.Step("Succeed Show from App1 from device 2", common.show, {3, "SUCCESS"})
 
 runner.Step("Register App2 from device 2", common.registerAppEx, {4, appParams[2], 2})
-runner.Step("Succeed Show from App2 from device 2", common.Show, {4, "SUCCESS"})
+runner.Step("Succeed Show from App2 from device 2", common.show, {4, "SUCCESS"})
 
 runner.Step("Register App3 from device 2", common.registerAppEx, {5, appParams[3], 2})
-runner.Step("Succeed Show from App3 from device 2", common.Show, {5, "SUCCESS"})
+runner.Step("Succeed Show from App3 from device 2", common.show, {5, "SUCCESS"})
 
 runner.Step("Disallow group Group001 for all App", common.funcGroupConsentForApp,
     {{{name = "ConsentGroup001", allowed = false}}})
-runner.Step("User disallowed Show from App1 from device 1", common.Show, {1, "USER_DISALLOWED"})
-runner.Step("User disallowed Show from App2 from device 1", common.Show, {2, "USER_DISALLOWED"})
-runner.Step("User disallowed Show from App1 from device 2", common.Show, {3, "USER_DISALLOWED"})
-runner.Step("User disallowed Show from App2 from device 2", common.Show, {4, "USER_DISALLOWED"})
-runner.Step("User disallowed Show from App3 from device 2", common.Show, {5, "USER_DISALLOWED"})
+runner.Step("User disallowed Show from App1 from device 1", common.show, {1, "USER_DISALLOWED"})
+runner.Step("User disallowed Show from App2 from device 1", common.show, {2, "USER_DISALLOWED"})
+runner.Step("User disallowed Show from App1 from device 2", common.show, {3, "USER_DISALLOWED"})
+runner.Step("User disallowed Show from App2 from device 2", common.show, {4, "USER_DISALLOWED"})
+runner.Step("User disallowed Show from App3 from device 2", common.show, {5, "USER_DISALLOWED"})
 
 runner.Title("Postconditions")
 runner.Step("Remove mobile devices", common.clearMobDevices, {devices})

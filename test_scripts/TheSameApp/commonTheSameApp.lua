@@ -218,13 +218,27 @@ end
 
 function common.funcGroupConsentForApp(pPrompts, pAppId)
 
-  local function findFunctionalGroupId(pAllowedFunctions, pGroupName)
+  local function findFunctionalGroupIds(pAllowedFunctions, pGroupName)
+    local ids = {}
     for _, allowedFunc in pairs(pAllowedFunctions) do
       if allowedFunc.name == pGroupName then
-        return allowedFunc.id
+        table.insert(ids, allowedFunc.id)
       end
     end
-    return nil
+    return ids
+  end
+
+  local function addConsentedFunctionsItems(pAllowedFunctions, pPromptItem, rConsentedFunctions)
+    local groupIds = findFunctionalGroupIds(pAllowedFunctions, pPromptItem.name)
+    if not next(groupIds) then
+      common.run.fail("Unknown user consent prompt:" .. pPromptItem.name)
+      return
+    end
+    for _, groupId in ipairs(groupIds) do
+      local item = common.cloneTable(pPromptItem)
+      item.id = groupId
+      table.insert(rConsentedFunctions, item)
+    end
   end
 
   local hmiAppID = nil
@@ -238,15 +252,9 @@ function common.funcGroupConsentForApp(pPrompts, pAppId)
   local corId = common.hmi.getConnection():SendRequest("SDL.GetListOfPermissions", { appID = hmiAppID})
   common.hmi.getConnection():ExpectResponse(corId)
   :Do(function(_,data)
-      local consentedFunctions = common.cloneTable(pPrompts)
-      local allowedFunctions = data.result.allowedFunctions
-      for _, promptItem in pairs(consentedFunctions) do
-        local groupId = findFunctionalGroupId(allowedFunctions, promptItem.name)
-        if not groupId then
-          common.run.fail("Unknown user consent prompt:" .. promptItem.name)
-          return
-        end
-        promptItem.id = groupId
+      local consentedFunctions = {}
+      for _, promptItem in pairs(pPrompts) do
+        addConsentedFunctionsItems(data.result.allowedFunctions, promptItem, consentedFunctions)
       end
 
       common.hmi.getConnection():SendNotification("SDL.OnAppPermissionConsent",
