@@ -2,7 +2,6 @@
 -- Common module
 ---------------------------------------------------------------------------------------------------
 --[[ Required Shared libraries ]]
-local test = require("user_modules/dummy_connecttest")
 local utils = require('user_modules/utils')
 local actions = require('user_modules/sequences/actions')
 local events = require("events")
@@ -50,7 +49,7 @@ function common.connectMobDevice(pMobConnId, deviceInfo, isSDLAllowed)
   local mobConnectExp = common.mobile.connect(pMobConnId)
   if isSDLAllowed then
     mobConnectExp:Do(function()
-        common.init.allowSDL()
+        common.mobile.allowSDL(pMobConnId)
       end)
   end
 end
