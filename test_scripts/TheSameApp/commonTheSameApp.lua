@@ -451,4 +451,88 @@ function common.rpcRejectWithConsent(pModuleType, pAppId)
   mobSession:ExpectResponse(cid, { success = false, resultCode = "REJECTED", info = info })
 end
 
+function common.ignitionOff(pDevices, pExpFunc)
+  local isOnSDLCloseSent = false
+  local hmi = common.hmi.getConnection()
+  if pExpFunc then pExpFunc() end
+  hmi:SendNotification("BasicCommunication.OnExitAllApplications", { reason = "SUSPEND" })
+  hmi:ExpectNotification("BasicCommunication.OnSDLPersistenceComplete")
+  :Do(function()
+      hmi:SendNotification("BasicCommunication.OnExitAllApplications", { reason = "IGNITION_OFF" })
+      hmi:ExpectNotification("BasicCommunication.OnSDLClose")
+      :Do(function()
+          isOnSDLCloseSent = true
+        end)
+      :Times(AtMost(1))
+    end)
+  common.wait(3000)
+  :Do(function()
+      if isOnSDLCloseSent == false then common.cprint(35, "BC.OnSDLClose was not sent") end
+      if common.sdl.isRunning() then common.sdl.StopSDL() end
+      for i in pairs(pDevices) do
+        common.mobile.deleteConnection(i)
+      end
+    end)
+end
+
+function common.addCommand(pAppId, pData)
+  local session = common.mobile.getSession()
+  local hmi = common.hmi.getConnection()
+  local cid = session(pAppId):SendRPC("AddCommand", pData.mob)
+  hmi:ExpectRequest("VR.AddCommand", pData.hmi)
+  :Do(function(_, data)
+      hmi:SendResponse(data.id, data.method, "SUCCESS", {})
+    end)
+  session(pAppId):ExpectResponse(cid, { success = true, resultCode = "SUCCESS" })
+  return session(pAppId):ExpectNotification("OnHashChange")
+end
+
+function common.addSubMenu(pAppId, pData)
+  local session = common.mobile.getSession(pAppId)
+  local hmi = common.hmi.getConnection()
+  local cid = session:SendRPC("AddSubMenu", pData.mob)
+  hmi:ExpectRequest("UI.AddSubMenu", pData.hmi)
+  :Do(function(_, data)
+      hmi:SendResponse(data.id, data.method, "SUCCESS", {})
+    end)
+  session:ExpectResponse(cid, { success = true, resultCode = "SUCCESS" })
+  return session:ExpectNotification("OnHashChange")
+end
+
+function common.reRegisterAppEx(pAppId, pMobConnId, pAppData, pExpResDataFunc)
+  local params = common.cloneTable(common.app.getParams(pAppId))
+  params.hashID = pAppData.hashId
+  local hmiAppId = pAppData.hmiAppId
+
+  local session = common.mobile.createSession(pAppId, pMobConnId)
+  local connection = session.mobile_session_impl.connection
+  session:StartService(7)
+  :Do(function()
+      if pExpResDataFunc then pExpResDataFunc() end
+      local cid = session:SendRPC("RegisterAppInterface", params)
+      common.hmi.getConnection():ExpectNotification("BasicCommunication.OnAppRegistered",
+        {
+          application = {
+            appName = params.appName,
+            appID = hmiAppId,
+            deviceInfo = {
+              name = common.getDeviceName(connection.host, connection.port),
+              id = common.getDeviceMAC(connection.host, connection.port)
+            }
+          }
+        })
+      :Do(function(_, d1)
+        common.app.setHMIId(d1.params.application.appID, pAppId)
+        end)
+      session:ExpectResponse(cid, { success = true, resultCode = "SUCCESS" })
+    end)
+end
+
+function common.unexpectedDisconnect(pAppId)
+  if pAppId == nil then pAppId = 1 end
+  common.hmi.getConnection():ExpectNotification("BasicCommunication.OnAppUnregistered",
+    { unexpectedDisconnect = true, appID = common.app.getHMIId(pAppId) })
+  common.mobile.deleteSession(pAppId)
+end
+
 return common
