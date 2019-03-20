@@ -20,8 +20,6 @@
 --[[ Required Shared libraries ]]
 local runner = require('user_modules/script_runner')
 local common = require('test_scripts/TheSameApp/commonTheSameApp')
--- local json = require("modules/json")
--- local utils = require('user_modules/utils')
 
 --[[ Test Configuration ]]
 runner.testSettings.isSelfIncluded = false
@@ -78,11 +76,11 @@ local function sendOnVehicleData(pAppId1, pAppId2, pAppToBeNotified)
   local mobSession1 = common.mobile.getSession(pAppId1)
   local mobSession2 = common.mobile.getSession(pAppId2)
   local pTime1, pTime2
-  local pTime = pAppToBeNotified                    -- defines which app should get this notification
+  local pNAS = pAppToBeNotified                    -- defines which app should get this notification
 
-  if     pTime == 0 then pTime1 = 0; pTime2 = 0
-  elseif pTime == 1 then pTime1 = 1; pTime2 = 0
-  elseif pTime == 2 then pTime1 = 0; pTime2 = 1
+  if     pNAS == 0 then pTime1 = 0; pTime2 = 0
+  elseif pNAS == 1 then pTime1 = 1; pTime2 = 0
+  elseif pNAS == 2 then pTime1 = 0; pTime2 = 1
   end
 
   common.hmi.getConnection():SendNotification("VehicleInfo.OnVehicleData", { speed = 60.5 , {gps = {1.1, 1.1}} })
@@ -124,7 +122,7 @@ runner.Step("Connect two mobile devices to SDL", common.connectMobDevices, {devi
 runner.Step("Register App1 from device 1", common.registerAppEx, { 1, appParams[1], 1 })
 runner.Step("Register App2 from device 2", common.registerAppEx, { 2, appParams[2], 2 })
 runner.Step("Activate App 1", common.app.activate, { 1 })
-runner.Step("App1 from Mobile 1 requests SubscribeVehicleData", sendSubscribeGPS, { 1, true })
+runner.Step("App1 from Mobile 1 requests SubscribeVehicleData", sendSubscribeGPS,      { 1, true })
 runner.Step("Activate App 2", common.app.activate, { 2 })
 runner.Step("App2 from Mobile 2 requests SubscribeVehicleData", sendSubscribeGPSSpeed, { 2, true })
 

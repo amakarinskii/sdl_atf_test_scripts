@@ -119,7 +119,8 @@ local function registerExpectServiceEventFunc(pMobSession)
       end)
     :Do(function()
         if session.security:isHandshakeFinished() then
-          event_dispatcher:RaiseEvent(test.mobileConnection, event)
+          local mobileConnection = self.mobile_session_impl.connection
+          event_dispatcher:RaiseEvent(mobileConnection, event)
         end
       end)
     :Times(AnyNumber())
@@ -135,12 +136,12 @@ end
 --]]
 function actions.getMobileSession(pAppId)
   if not pAppId then pAppId = 1 end
-  if not test.mobileSession[pAppId] then
-    local session = origGetMobileSession(pAppId)
-    registerStartSecureServiceFunc(session)
+  local session = origGetMobileSession(pAppId)
+  if not session.ExpectHandshakeMessage then
     registerExpectServiceEventFunc(session)
+    registerStartSecureServiceFunc(session)
   end
-  return origGetMobileSession(pAppId)
+  return session
 end
 
 return m

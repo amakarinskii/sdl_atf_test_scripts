@@ -20,8 +20,6 @@
 --[[ Required Shared libraries ]]
 local runner = require('user_modules/script_runner')
 local common = require('test_scripts/TheSameApp/commonTheSameApp')
--- local json = require("modules/json")
--- local utils = require('user_modules/utils')
 
 --[[ Test Configuration ]]
 runner.testSettings.isSelfIncluded = false
@@ -91,11 +89,11 @@ local function onInteriorVehicleData(pAppId1, pAppId2, pNumberOfAppsSubscribed, 
   local mobSession1 = common.mobile.getSession(pAppId1)
   local mobSession2 = common.mobile.getSession(pAppId2)
   local pTime1, pTime2
-  local pTime = pNumberOfAppsSubscribed                         -- defines how many apps should get this notification
+  local pNAS = pNumberOfAppsSubscribed                         -- defines how many apps should get this notification
 
-  if     pTime == 0 then pTime1 = 0; pTime2 = 0
-  elseif pTime == 1 then pTime1 = 1; pTime2 = 0
-  elseif pTime == 2 then pTime1 = 1; pTime2 = 1 end
+  if     pNAS == 0 then pTime1 = 0; pTime2 = 0
+  elseif pNAS == 1 then pTime1 = 1; pTime2 = 0
+  elseif pNAS == 2 then pTime1 = 1; pTime2 = 1 end
 
   common.hmi.getConnection():SendNotification("RC.OnInteriorVehicleData", pNotificationPayload[pPayload] )
   mobSession1:ExpectNotification("OnInteriorVehicleData", pNotificationPayload[pPayload] ):Times( pTime1 )
@@ -114,17 +112,17 @@ runner.Step("Activate App 1", common.app.activate, { 1 })
 
 runner.Title("Test")
 runner.Step("App1 from Mobile 1 subscribes for RADIO",   getInteriorVehicleData, { 1, "RADIO",   true, "1st_app" })
-runner.Step("HMI sends RADIO VehicleData - App 2 receive",    onInteriorVehicleData, { 1, 2, 1, "RADIO" })
+runner.Step("HMI sends RADIO VehicleData - App 2 receive",   onInteriorVehicleData, { 1, 2, 1, "RADIO" })
 
 runner.Step("Activate App 2", common.app.activate, { 2 })
 runner.Step("App2 from Mobile 2 subscribes for CLIMATE", getInteriorVehicleData, { 2, "CLIMATE", true, "1st_app" })
-runner.Step("HMI sends CLIMATE VehicleData - App 2 receive",  onInteriorVehicleData, { 2, 1, 1, "CLIMATE" })
+runner.Step("HMI sends CLIMATE VehicleData - App 2 receive", onInteriorVehicleData, { 2, 1, 1, "CLIMATE" })
 
 runner.Step("App1 from Mobile 1 subscribes for CLIMATE", getInteriorVehicleData, { 1, "CLIMATE", true })
-runner.Step("HMI sends CLIMATE VehicleData - App 1 receive",  onInteriorVehicleData, { 1, 2, 2, "CLIMATE" })
+runner.Step("HMI sends CLIMATE VehicleData - App 1 receive", onInteriorVehicleData, { 1, 2, 2, "CLIMATE" })
 
 runner.Step("App2 from Mobile 2 subscribes for RADIO",   getInteriorVehicleData, { 2, "RADIO",   true })
-runner.Step("HMI sends RADIO VehicleData - NOONE receives",   onInteriorVehicleData, { 2, 1, 2, "RADIO" })
+runner.Step("HMI sends RADIO VehicleData - NOONE receives",  onInteriorVehicleData, { 2, 1, 2, "RADIO" })
 
 runner.Title("Postconditions")
 runner.Step("Remove mobile devices", common.clearMobDevices, {devices})

@@ -45,6 +45,7 @@ end
 function common.connectMobDevice(pMobConnId, deviceInfo, isSDLAllowed)
   if isSDLAllowed == nil then isSDLAllowed = true end
   utils.addNetworkInterface(pMobConnId, deviceInfo.host)
+  print ("deviceInfo.host: " .. deviceInfo.host, " deviceInfo.port: " .. deviceInfo.port)
   common.mobile.createConnection(pMobConnId, deviceInfo.host, deviceInfo.port)
   local mobConnectExp = common.mobile.connect(pMobConnId)
   if isSDLAllowed then
@@ -72,12 +73,11 @@ function common.clearMobDevices(pDevices)
   end
 end
 
-function common.registerAppEx(pAppId, pAppParams, pMobConnId)
+function common.registerAppEx(pAppId, pAppParams, pMobConnId, hasPTU)
   local appParams = common.app.getParams(pAppId)
   for k, v in pairs(pAppParams) do
     appParams[k] = v
   end
-
   local session = common.mobile.createSession(pAppId, pMobConnId)
   session:StartService(7)
   :Do(function()
@@ -95,6 +95,12 @@ function common.registerAppEx(pAppId, pAppParams, pMobConnId)
         })
       :Do(function(_, d1)
         common.app.setHMIId(d1.params.application.appID, pAppId)
+          if hasPTU then
+            common.hmi.getConnection():ExpectRequest("BasicCommunication.PolicyUpdate")
+              :Do(function(_, d2)
+                  common.hmi.getConnection():SendResponse(d2.id, d2.method, "SUCCESS", { })
+                end)
+          end
         end)
       session:ExpectResponse(corId, { success = true, resultCode = "SUCCESS" })
       :Do(function()
@@ -211,6 +217,19 @@ function common.getSystemCapability(pAppId, pResultCode)
   local mobileSession = common.mobile.getSession(pAppId)
   local cid = mobileSession:SendRPC("GetSystemCapability", { systemCapabilityType = "NAVIGATION" })
   mobileSession:ExpectResponse(cid, {success = isSuccess, resultCode = pResultCode})
+end
+
+function common.setProtocolVersion (pProtocolVersion)
+  config.defaultProtocolVersion = pProtocolVersion
+end
+
+function common.subscribeOnButton(pAppId, pButtonName)
+  local mobSession = common.mobile.getSession(pAppId)
+  local cid = mobSession:SendRPC("SubscribeButton", {buttonName = pButtonName})
+    common.hmi.getConnection():ExpectNotification("Buttons.OnButtonSubscription",
+        {name = pButtonName, isSubscribed = true, appID = common.app.getHMIId(pAppId) })
+    mobSession:ExpectResponse(cid, { success = true, resultCode = "SUCCESS" })
+    mobSession:ExpectNotification("OnHashChange")
 end
 
 return common
