@@ -253,7 +253,7 @@ function m.mobile.disconnect(pMobConnId)
   if pMobConnId == nil then pMobConnId = 1 end
   local connection = m.mobile.getConnection(pMobConnId)
   local sessions = m.mobile.getApps(pMobConnId)
-  for _, id in ipairs(sessions) do
+  for id in pairs(sessions) do
     m.mobile.deleteSession(id)
   end
   -- remove pinned mobile disconnect expectation
