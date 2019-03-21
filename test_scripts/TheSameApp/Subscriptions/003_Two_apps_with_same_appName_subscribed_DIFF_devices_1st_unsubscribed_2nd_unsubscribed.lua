@@ -5,27 +5,27 @@
 -- and receive OnButtonEvent and OnButtonPress notifications.
 --   Precondition:
 -- 1) SDL and HMI are started
--- 2) Mobile №1 and №2 are connected to SDL
--- 3) Mobile №1 and №2 are subscribed on "OK" button already
+-- 2) Mobiles №1 and №2 are connected to SDL
+-- 3) Mobiles №1 and №2 are subscribed on "OK" button already
 --   Steps:
--- 1) HMI send OnButtonEvent and OnButtonPress notification for "OK" button
+-- 1) HMI sent OnButtonEvent and OnButtonPress notifications for "OK" button
 --   Check SDL:
 --     sends OnButtonEvent("OK") and OnButtonPress("OK") notifications to Mobile №1 and to Mobile №2
--- 2) Mobile №1 App1 requests Unsubscribe from "OK" button
---     send Buttons.UnsubscribeButton( "OK", appId_1 ) to HMI
+-- 2) Mobile №1 App1 requested Unsubscribe from "OK" button
+--     sends Buttons.UnsubscribeButton( "OK", appId_1 ) to HMI
 --     receives Buttons.UnsubscribeButton("SUCCESS") response from HMI
 --     sends UnsubscribeButton("SUCCESS") response to Mobile №1
 --     sends OnHashChange with updated hashId to Mobile №1
--- 3) HMI send OnButtonEvent and OnButtonPress notification for "OK" button
+-- 3) HMI sent OnButtonEvent and OnButtonPress notifications for "OK" button
 --   Check SDL:
 --     sends OnButtonEvent("OK") and OnButtonPress("OK") notifications to Mobile №2
 --     does NOT send these notifications to Mobile №1
--- 4) Mobile №2 App2 is requested Unsubscribe from "OK" button
----    send Buttons.UnsubscribeButton( "OK", appId_2 ) to HMI
+-- 4) Mobile №2 App2 requested Unsubscribe from "OK" button
+---    sends Buttons.UnsubscribeButton( "OK", appId_2 ) to HMI
 --     receives Buttons.UnsubscribeButton("SUCCESS") response from HMI
 --     sends UnsubscribeButton("SUCCESS") response to Mobile №2
 --     sends OnHashChange with updated hashId to Mobile №2
--- 5) HMI send OnButtonEvent and OnButtonPress notification for "OK" button
+-- 5) HMI sent OnButtonEvent and OnButtonPress notifications for "OK" button
 --   Check SDL:
 --     does NOT send these notifications to Mobile №1 and to Mobile №2
 ---------------------------------------------------------------------------------------------------
@@ -43,8 +43,8 @@ local devices = {
 }
 
 local appParams = {
-	[1] = { appName = "Test Application", appID = "0001",  fullAppID = "0000001" },
-	[2] = { appName = "Test Application", appID = "00022", fullAppID = "00000022" }
+  [1] = { appName = "Test Application", appID = "0001",  fullAppID = "0000001" },
+  [2] = { appName = "Test Application", appID = "00022", fullAppID = "00000022" }
 }
 
 --[[ Local Functions ]]

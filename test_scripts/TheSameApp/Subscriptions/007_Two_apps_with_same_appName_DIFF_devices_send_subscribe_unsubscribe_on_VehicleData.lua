@@ -1,21 +1,43 @@
 ---------------------------------------------------------------------------------------------------
 -- Proposal:
 -- https://github.com/smartdevicelink/sdl_evolution/blob/master/proposals/0204-same-app-from-multiple-devices.md
--- Description: Registration of two mobile applications with the same appIDs and appNames which are match to the
--- nickname contained in PT from different mobiles.
+-- Description: Two mobile applications with the same appNames and different appIds from different mobiles send
+-- UnsubscribeVehicleData requests and receive OnVehicleData notifications.
 --   Precondition:
--- 1) PT contains entity ( appID = 1, nicknames = "Test Application" )
--- 2) SDL and HMI are started
--- 3) Mobile №1 and №2 are connected to SDL
+-- 1) SDL and HMI are started
+-- 2) Mobiles №1 and №2 are connected to SDL
+-- 3) Mobile №1 App1 subscribed on VehicleData("gps")
+-- 4) Mobile №1 App1 subscribed on VehicleData("gps", "speed")
 --   Steps:
--- 1) Mobile №1 sends RegisterAppInterface request (appID = 1, appName = "Test Application") to SDL
---   CheckSDL:
---     SDL sends RegisterAppInterface response( resultCode = SUCCESS  ) to Mobile №1
---     BasicCommunication.OnAppRegistered(...) notification to HMI
--- 2) Mobile №2 sends RegisterAppInterface request (appID = 1, appName = "Test Application") to SDL
---   CheckSDL:
---     SDL sends RegisterAppInterface response( resultCode = SUCCESS  ) to Mobile №2
---     BasicCommunication.OnAppRegistered(...) notification to HMI
+-- 1) Mobile №2 App2 requested Unsubscribe from VehicleData("gps")
+--   Check SDL:
+--     send VeicleInfo.UnsubscribeVehicleData (appId_2, "gps" = true) to HMI
+--     sends UnsubscribeVehicleData("SUCCESS") response to Mobile №2
+--     sends OnHashChange with updated hashId to Mobile №2
+-- 2) HMI sent OnVehicleData("speed", "gps") notification
+--   Check SDL:
+--     sends OnVehicleData("gps") notification to Mobile №1
+--     sends OnVehicleData("speed") notification to Mobile №2
+-- 3) Mobile №1 App1 requested Unsubscribe from VehicleData("gps")
+--   Check SDL:
+--     sends VeicleInfo.UnsubscribeVehicleData (appId_1, "gps" = true) to HMI
+--     receives VeicleInfo.UnsubscribeVehicleData("SUCCESS") response from HMI
+--     sends UnsubscribeVehicleData("SUCCESS") response to Mobile №1
+--     sends OnHashChange with updated hashId to Mobile №1
+-- 4) HMI sent OnVehicleData("speed", "gps") notification
+--   Check SDL:
+--     does NOT send OnVehicleData to Mobile №1
+--     sends OnVehicleData("speed") notification to Mobile №2
+-- 5) Mobile №2 App2 requested Unsubscribe from VehicleData("speed")
+--   Check SDL:
+--     sends VeicleInfo.UnsubscribeVehicleData (appId_2, "speed" = true) to HMI
+--     receives VeicleInfo.UnsubscribeVehicleData("SUCCESS") response from HMI
+--     sends UnsubscribeVehicleData("SUCCESS") response to Mobile №2
+--     sends OnHashChange with updated hashId to Mobile №2
+-- 6) HMI sent OnVehicleData("speed", "gps") notification
+--   Check SDL:
+--     does NOT send OnVehicleData to Mobile №1
+--     does NOT send OnVehicleData to Mobile №2
 ---------------------------------------------------------------------------------------------------
 --[[ Required Shared libraries ]]
 local runner = require('user_modules/script_runner')
@@ -31,8 +53,8 @@ local devices = {
 }
 
 local appParams = {
-	[1] = { appName = "Test Application", appID = "0001",  fullAppID = "0000001" },
-	[2] = { appName = "Test Application 2", appID = "00022", fullAppID = "00000022" }
+  [1] = { appName = "Test Application", appID = "0001",  fullAppID = "0000001" },
+  [2] = { appName = "Test Application 2", appID = "00022", fullAppID = "00000022" }
 }
 
 --[[ Local Functions ]]

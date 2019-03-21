@@ -5,28 +5,28 @@
 -- buttons and receive OnButtonEvent and OnButtonPress notifications in different cases.
 --   Precondition:
 -- 1) SDL and HMI are started
--- 2) Mobile №1 and №2 are connected to SDL
+-- 2) Mobiles №1 and №2 are connected to SDL
 --   Steps:
--- 1) Mobile №1 App1 is requested Subscribe on "OK" button
+-- 1) Mobile №1 App1 requested Subscribe on "OK" button
 --   Check SDL:
---     send Buttons.SubscribeButton( "OK", appId_1 ) to HMI
+--     sends Buttons.SubscribeButton("OK", appId_1) to HMI
 --     receives Buttons.SubscribeButton("SUCCESS") response from HMI
 --     sends SubscribeButton("SUCCESS") response to Mobile №1
 --     sends OnHashChange with updated hashId to Mobile №1
--- 2) HMI send OnButtonEvent and OnButtonPress notification for "OK" button
+-- 2) HMI sent OnButtonEvent and OnButtonPress notifications for "OK" button
 --   Check SDL:
 --     sends OnButtonEvent("OK") and OnButtonPress("OK") notifications to Mobile №1
---     not send OnButtonEvent and OnButtonPress to Mobile №2
--- 3) Mobile №2 App2 is requested Subscribe on "PLAY_PAUSE" button
+--     does NOT send OnButtonEvent and OnButtonPress to Mobile №2
+-- 3) Mobile №2 App2 requested Subscribe on "PLAY_PAUSE" button
 --   Check SDL:
---     send Buttons.SubscribeButton( "PLAY_PAUSE", appId_2 ) to HMI
+--     sends Buttons.SubscribeButton("PLAY_PAUSE", appId_2) to HMI
 --     receives Buttons.SubscribeButton("SUCCESS") response from HMI
 --     sends SubscribeButton("SUCCESS") response to Mobile №2
 --     sends OnHashChange with updated hashId to Mobile №2
--- 4) HMI send OnButtonEvent and OnButtonPress notification for "PLAY_PAUSE" button
+-- 4) HMI sent OnButtonEvent and OnButtonPress notifications for "PLAY_PAUSE" button
 --   Check SDL:
 --     sends OnButtonEvent("PLAY_PAUSE") and OnButtonPress("PLAY_PAUSE") notifications to Mobile №2
---     not send OnButtonEvent and OnButtonPress to Mobile №1
+--     does NOT send OnButtonEvent and OnButtonPress to Mobile №1
 ---------------------------------------------------------------------------------------------------
 --[[ Required Shared libraries ]]
 local runner = require('user_modules/script_runner')
@@ -42,8 +42,8 @@ local devices = {
 }
 
 local appParams = {
-	[1] = { appName = "Test Application", appID = "0001",  fullAppID = "0000001" },
-	[2] = { appName = "Test Application", appID = "00022", fullAppID = "00000022" }
+  [1] = { appName = "Test Application", appID = "0001",  fullAppID = "0000001" },
+  [2] = { appName = "Test Application", appID = "00022", fullAppID = "00000022" }
 }
 
 --[[ Local Functions ]]
