@@ -1,7 +1,7 @@
 ---------------------------------------------------------------------------------------------------
 -- Proposal:
 -- https://github.com/smartdevicelink/sdl_evolution/blob/master/proposals/0204-same-app-from-multiple-devices.md
--- Description: Send encrypted or unencrypted RPCs in protected and unprotected mode apps registered on different
+-- Description: Send encrypted or unencrypted RPCs in protected and unprotected mode from apps registered on different
 -- mobile devices and having same appNames and same appIds
 --   Precondition:
 -- 1) SDL has up-to-date certificates in Policy Table
@@ -55,9 +55,10 @@ local appParams = {
   [2] = { appName = "server", appID = "0001", fullAppID = "SPT" }
 }
 
-local addCommandParams = {{ cmdID  = 001, menuParams = {menuName = "menu_1"}},
-                          { cmdID  = 002, menuParams = {menuName = "menu_2"}},
-                          { cmdID  = 003, menuParams = {menuName = "menu_3"}}
+local addCommandParams = {
+  { cmdID  = 001, menuParams = {menuName = "menu_1"}},
+  { cmdID  = 002, menuParams = {menuName = "menu_2"}},
+  { cmdID  = 003, menuParams = {menuName = "menu_3"}}
 }
 
 --[[ Scenario ]]

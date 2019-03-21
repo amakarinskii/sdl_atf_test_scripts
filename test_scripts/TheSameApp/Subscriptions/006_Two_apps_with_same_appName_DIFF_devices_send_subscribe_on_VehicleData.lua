@@ -1,7 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 -- Proposal:
 -- https://github.com/smartdevicelink/sdl_evolution/blob/master/proposals/0204-same-app-from-multiple-devices.md
--- Description: Two mobile applications with the same appNames and different appIds from different mobiles send
+--   Description:
+-- Two mobile applications with the same appNames and different appIds from different mobiles send
 -- SubscribeVehicleData requests and receive OnVehicleData notifications.
 --   Precondition:
 -- 1) SDL and HMI are started
@@ -87,7 +88,7 @@ local function sendSubscribeVehicleData2(pAppId, pFirstApp)
     mobSession:ExpectNotification("OnHashChange")
 end
 
-local function sendOnVehicleData1(pAppId1, pAppId2, pNumberOfAppsSubscribed)
+local function sendOnVehicleData1(pAppId1, pAppId2, pNumberOfAppsSubscribed, pData)
   local mobSession1 = common.mobile.getSession(pAppId1)
   local mobSession2 = common.mobile.getSession(pAppId2)
   local pTime1, pTime2
@@ -97,9 +98,15 @@ local function sendOnVehicleData1(pAppId1, pAppId2, pNumberOfAppsSubscribed)
   elseif pNAS == 1 then pTime1 = 1; pTime2 = 0
   elseif pNAS == 2 then pTime1 = 1; pTime2 = 1 end
 
-  common.hmi.getConnection():SendNotification("VehicleInfo.OnVehicleData", { speed = 60.5 } )
-  mobSession1:ExpectNotification("OnVehicleData",{ speed = 60.5 } ):Times(pTime1)
-  mobSession2:ExpectNotification("OnVehicleData",{ speed = 60.5 } ):Times(pTime2)
+  if "gps" == pData then
+    common.hmi.getConnection():SendNotification("VehicleInfo.OnVehicleData",  {gps = {1.1, 1.1}} )
+    mobSession1:ExpectNotification("OnVehicleData", {gps = {1.1, 1.1}} ):Times(pTime1)
+    mobSession2:ExpectNotification("OnVehicleData", {gps = {1.1, 1.1}} ):Times(pTime2)
+  else
+    common.hmi.getConnection():SendNotification("VehicleInfo.OnVehicleData",  { speed = 60.5 } )
+    mobSession1:ExpectNotification("OnVehicleData", { speed = 60.5 } ):Times(pTime1)
+    mobSession2:ExpectNotification("OnVehicleData", { speed = 60.5 } ):Times(pTime2)
+  end
 end
 
 local function sendOnVehicleData2(pAppId1, pAppId2, pNumberOfAppsSubscribed)
@@ -113,7 +120,7 @@ local function sendOnVehicleData2(pAppId1, pAppId2, pNumberOfAppsSubscribed)
   elseif pNAS == 2 then pTime1 = 1; pTime2 = 1 end
 
   common.hmi.getConnection():SendNotification("VehicleInfo.OnVehicleData", { speed = 60.5 , {gps = {1.1, 1.1}} })
-  mobSession1:ExpectNotification("OnVehicleData",{ speed = 60.5 , gps = {1.1, 1.1} }):Times(pTime1)
+  mobSession1:ExpectNotification("OnVehicleData",{ speed = 60.5 }):Times(pTime1)
   mobSession2:ExpectNotification("OnVehicleData",{ speed = 60.5 , gps = {1.1, 1.1} }):Times(pTime2)
 end
 
@@ -129,11 +136,12 @@ runner.Step("Activate App 1", common.app.activate, { 1 })
 
 runner.Title("Test")
 runner.Step("App1 from Mobile 1 requests SubscribeVehicleData", sendSubscribeVehicleData1, { 1, true })
-runner.Step("HMI sends OnVehicleData - App 1 receives",         sendOnVehicleData1, { 1, 2, 1 })
+runner.Step("HMI sends OnVehicleData - App 1 receives",         sendOnVehicleData1, { 1, 2, 1, "speed" })
 
 runner.Step("Activate App 2", common.app.activate, { 2 })
 runner.Step("App2 from Mobile 2 requests SubscribeVehicleData", sendSubscribeVehicleData2, { 2, true })
-runner.Step("HMI sends OnVehicleData - Apps 1 and 2 receive",   sendOnVehicleData2, { 2, 1, 2 })          -- BUG here
+runner.Step("HMI sends OnVehicleData - App 2 receives",         sendOnVehicleData1, { 2, 1, 1, "gps" })
+runner.Step("HMI sends OnVehicleData - Apps 1 and 2 receive",   sendOnVehicleData2, { 1, 2, 2 })
 
 runner.Title("Postconditions")
 runner.Step("Remove mobile devices", common.clearMobDevices, {devices})

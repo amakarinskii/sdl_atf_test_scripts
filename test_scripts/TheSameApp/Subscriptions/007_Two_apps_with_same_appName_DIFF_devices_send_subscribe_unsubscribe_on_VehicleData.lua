@@ -1,7 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 -- Proposal:
 -- https://github.com/smartdevicelink/sdl_evolution/blob/master/proposals/0204-same-app-from-multiple-devices.md
--- Description: Two mobile applications with the same appNames and different appIds from different mobiles send
+--   Description:
+-- Two mobile applications with the same appNames and different appIds from different mobiles send
 -- UnsubscribeVehicleData requests and receive OnVehicleData notifications.
 --   Precondition:
 -- 1) SDL and HMI are started
@@ -53,7 +54,7 @@ local devices = {
 }
 
 local appParams = {
-  [1] = { appName = "Test Application", appID = "0001",  fullAppID = "0000001" },
+  [1] = { appName = "Test Application",   appID = "0001",  fullAppID = "0000001" },
   [2] = { appName = "Test Application 2", appID = "00022", fullAppID = "00000022" }
 }
 
@@ -98,11 +99,11 @@ local function sendOnVehicleData(pAppId1, pAppId2, pAppToBeNotified)
   local mobSession1 = common.mobile.getSession(pAppId1)
   local mobSession2 = common.mobile.getSession(pAppId2)
   local pTime1, pTime2
-  local pNAS = pAppToBeNotified                    -- defines which app should get this notification
+  local pNAS = pAppToBeNotified                    -- defines how many apps should get this notification
 
   if     pNAS == 0 then pTime1 = 0; pTime2 = 0
-  elseif pNAS == 1 then pTime1 = 1; pTime2 = 0
-  elseif pNAS == 2 then pTime1 = 0; pTime2 = 1
+  elseif pNAS == 1 then pTime1 = 0; pTime2 = 1
+  elseif pNAS == 2 then pTime1 = 1; pTime2 = 1
   end
 
   common.hmi.getConnection():SendNotification("VehicleInfo.OnVehicleData", { speed = 60.5 , {gps = {1.1, 1.1}} })
@@ -150,13 +151,12 @@ runner.Step("App2 from Mobile 2 requests SubscribeVehicleData", sendSubscribeGPS
 
 runner.Title("Test")
 runner.Step("App 2 from Mobile 2 unsubscribes from GPS", sendUnsubscribeGPS, { 2 })
-runner.Step("HMI sends OnVehicleData - Apps 2 receives", sendOnVehicleData,  { 1, 2, 2 })
-runner.Step("HMI sends OnVehicleData - Apps 1 receives", sendOnVehicleData,  { 1, 2, 1 })
+runner.Step("HMI sends OnVehicleData - Apps 1 and 2 receive", sendOnVehicleData,  { 1, 2, 2 })
 
 runner.Step("App 1 from Mobile 1 unsubscribes from GPS", sendUnsubscribeGPS, { 1, true })
-runner.Step("HMI sends OnVehicleData - Apps 2 receives", sendOnVehicleData,  { 1, 2, 2 })
+runner.Step("HMI sends OnVehicleData - Apps 2 receives", sendOnVehicleData,  { 1, 2, 1 })
 
-runner.Step("App 2 from Mobile 2 unsubscribes from GPS", sendUnsubscribeSpeed, { 2 })
+runner.Step("App 2 from Mobile 2 unsubscribes from Speed", sendUnsubscribeSpeed, { 2 })
 runner.Step("HMI sends OnVehicleData - Apps 1 and 2 do NOT receive", sendOnVehicleData, { 1, 2, 0 })
 
 runner.Title("Postconditions")

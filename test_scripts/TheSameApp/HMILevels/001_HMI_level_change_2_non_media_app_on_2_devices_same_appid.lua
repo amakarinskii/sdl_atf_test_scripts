@@ -2,7 +2,11 @@
 --   Proposal:
 -- https://github.com/smartdevicelink/sdl_evolution/blob/master/proposals/0204-same-app-from-multiple-devices.md
 --   Description:
--- Registration of two mobile applications with the same appName and same appID from different mobile devices
+-- Register two mobile applications with the same appNames and same appIDs from different mobile devices.
+-- The value of "appHMIType" field is set to "DEFAULT" for these applications.
+-- Set different HMI levels for applications, send OnHMIStatus notification to SDL and check that SDL does not send it
+-- to the App if it is in NONE HMI level. And if not, check whether the value of "hmiLevel" parameter of the
+-- notification corresponds to the current HMI level of the application.
 --   Precondition:
 -- 1) SDL and HMI are started
 -- 2) Mobile №1 and №2 are connected to SDL

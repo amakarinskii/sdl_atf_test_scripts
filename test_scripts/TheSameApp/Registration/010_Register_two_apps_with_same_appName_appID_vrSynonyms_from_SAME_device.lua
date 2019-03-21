@@ -33,7 +33,7 @@ local devices = {
 
 local appParams = {
   [1] = { appName = "Test Application",   appID = "0001",  fullAppID = "0000001",  vrSynonyms = {"vrApp"} },
-  [2] = { appName = "Test Application 2", appID = "00022", fullAppID = "00000022", vrSynonyms = {"vrApp"} }
+  [2] = { appName = "Test Application 2", appID = "00022", fullAppID = "00000022", vrSynonyms = {"Test Application"} }
 }
 
 --[[ Local Functions ]]
