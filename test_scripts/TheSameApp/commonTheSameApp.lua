@@ -6,12 +6,19 @@ local test = require("user_modules/dummy_connecttest")
 local utils = require('user_modules/utils')
 local actions = require('user_modules/sequences/actions')
 local events = require("events")
+local constants = require('protocol_handler/ford_protocol_constants')
 
 --[[ General configuration parameters ]]
 config.defaultProtocolVersion = 2
 
 --[[ Module ]]
 local common = actions
+
+--[[ Common Data ]]
+common.events      = events
+common.frameInfo   = constants.FRAME_INFO
+common.frameType   = constants.FRAME_TYPE
+common.serviceType = constants.SERVICE_TYPE
 
 --[[ Proxy Functions ]]
 common.getDeviceName = utils.getDeviceName

@@ -21,28 +21,14 @@
 --     responds with StartServiceACK to Mobile №2
 ---------------------------------------------------------------------------------------------------
 --[[ Required Shared libraries ]]
-require('atf.util')
-local test = require("user_modules/dummy_connecttest")
 local runner = require('user_modules/script_runner')
 local common = require('test_scripts/TheSameApp/commonTheSameApp')
-local events = require('events')
-local Event = events.Event
-local commonTestCases = require("user_modules/shared_testcases/commonTestCases")
-local utils = require('user_modules/utils')
--- local common = require('test_scripts/TheSameApp/Security/commonSecurity')
-local constants = require('protocol_handler/ford_protocol_constants')
 
 --[[ Test Configuration ]]
 runner.testSettings.isSelfIncluded = false
-
 config.defaultProtocolVersion = 2
 
 --[[ Local Data ]]
-local m = {}
-m.frameInfo   = constants.FRAME_INFO
-m.frameType   = constants.FRAME_TYPE
-m.serviceType = constants.SERVICE_TYPE
-
 local devices = {
   [1] = { host = "1.0.0.1",         port = config.mobilePort },
   [2] = { host = "192.168.100.199", port = config.mobilePort }
@@ -64,13 +50,7 @@ local appParams = {
 }
 
 --[[ Local Functions ]]
--- local function StartVideoServiceNACK(pAppId)
---   local mobSession = common.getMobileSession(pAppId)
---   mobSession:StartService( 11 )
---   -- mobSession:ExpectControlMessage
--- end
-
-local function StartVideoService(pAppId)
+local function startVideoService(pAppId)
   local mobSession = common.getMobileSession(pAppId)
   mobSession:StartService( 11 )
   :ValidIf(function(_, data)
@@ -78,7 +58,8 @@ local function StartVideoService(pAppId)
         print("\t   --> StartService ACK received")
         return true
       else
-        return false, print("\t   --> StartService NACK received")
+        print("\t   --> StartService NACK received")
+        return false
       end
     end)
   common.hmi.getConnection():ExpectNotification("Navigation.StartStream")
@@ -87,71 +68,54 @@ local function StartVideoService(pAppId)
     end)
 end
 
-local function startVideoServiceNACK()
-  -- local startServiceMessage =
-  -- {
-  --   serviceType = m.serviceType.VIDEO,
-  --   frameInfo =  m.frameInfo.START_SERVICE,
-  --   sessionId = self.mobileSession.sessionId,
-  --   frameType = m.frameType.CONTROL_FRAME
-  -- }
+local function startVideoServiceNACK(pAppId)
+  local mobSession = common.getMobileSession(pAppId)
+  local sendMessageData = {
+    serviceType = common.serviceType.VIDEO,
+    frameInfo   = common.frameInfo.START_SERVICE,
+    frameType   = common.frameType.CONTROL_FRAME,
+    sessionId   = mobSession.SessionId.get()
+  }
 
-  local startServiceEvent = Event()
+  local startServiceEvent = common.events.Event()
   startServiceEvent.matches = function(_, data)
-    return data.frameType == m.frameInfo.CONTROL_FRAME --and
-         -- data.sessionId == common.getMobileSession().SessionId.get()-- and --.get()
-        --  data.serviceType == m.serviceType.VIDEO and
-        -- (data.frameInfo == m.frameInfo.START_SERVICE_NACK or
-        --  data.frameInfo == m.frameInfo.START_SERVICE_ACK)
-  end
-
-  -- Send Video service start from mobile app to SDL
+    return data.frameType == common.frameType.CONTROL_FRAME and
+         data.sessionId == mobSession.SessionId.get() and
+         data.serviceType == common.serviceType.VIDEO and
+        (data.frameInfo == common.frameInfo.START_SERVICE_NACK or
+         data.frameInfo == common.frameInfo.START_SERVICE_ACK)
+    end
   -- Expect StartServiceNACK on mobile app from SDL, it means service is not started
-  local ret = common.getMobileSession():ExpectEvent(startServiceEvent, "Expect StartServiceNACK")
+  local ret = mobSession:ExpectEvent(startServiceEvent, "Expect StartServiceNACK")
   ret:ValidIf(function(_, data)
-      if data.frameInfo == m.frameInfo.START_SERVICE_NACK then
+      if data.frameInfo == common.frameInfo.START_SERVICE_NACK then
+        print("\t   --> StartService NACK received")
         return true
       else
         return false, "StartService ACK received"
       end
     end)
 
-  common.getMobileSession():Send({
-      serviceType = m.serviceType.VIDEO,
-      frameInfo = m.frameInfo.START_SERVICE,
-      frameType = m.frameType.CONTROL_FRAME
-    })
+  -- Send Video service start from mobile app to SDL
+  mobSession:Send(sendMessageData)
 
-  -- self:Send(startServiceMessage)
-  -- commonTestCases.delayedExp()
   return ret
 end
-
-local function TestFunc ()
-  -- utils.printTable(common.getMobileSession())
-  print(tostring(common.getMobileSession().SessionId.get()))
-
-end
--- function delayedExp(timeout)
---   if not timeout then timeout = commonDefect.timeout end
---   commonTestCases:DelayedExp(timeout)
--- end
 
 --[[ Scenario ]]
 runner.Title("Preconditions")
 runner.Step("Clean environment", common.preconditions)
 runner.Step("Start SDL and HMI", common.start)
 runner.Step("Connect two mobile devices to SDL", common.connectMobDevices, {devices})
-runner.Step("Register App1 from device 1", common.registerAppEx, { 1, appParams[1], 1 })
+runner.Step("Register App1 from device 1",    common.registerAppEx, { 1, appParams[1], 1 })
 runner.Step("Set protocol version to 3", common.setProtocolVersion, { 3 })
-runner.Step("Register App2 from device 2", common.registerAppEx, { 2, appParams[2], 2 })
+runner.Step("Register App2 from device 2",    common.registerAppEx, { 2, appParams[2], 2 })
 
 runner.Title("Test")
 runner.Step("Activate App 1", common.app.activate, { 1 })
--- runner.Step("sdfdsds", TestFunc)
-runner.Step("App1 from Mobile 1 requests StartService request for Video streaming", startVideoServiceNACK, { })
+runner.Step("App1 from Mobile 1 requests StartService for Video streaming", startVideoServiceNACK, { 1 })
 runner.Step("Activate App 2", common.app.activate, { 2 })
-runner.Step("App2 from Mobile 2 requests StartService request for Video streaming", StartVideoService, { 2 })
+runner.Step("App2 from Mobile 2 requests StartService for Video streaming", startVideoService, { 2 })
 
 runner.Title("Postconditions")
 runner.Step("Remove mobile devices", common.clearMobDevices, {devices})

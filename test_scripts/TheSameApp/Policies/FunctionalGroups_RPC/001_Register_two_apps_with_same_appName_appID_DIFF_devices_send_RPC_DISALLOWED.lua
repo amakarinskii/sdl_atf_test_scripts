@@ -1,21 +1,30 @@
 ---------------------------------------------------------------------------------------------------
--- Proposal:
+--   Proposal:
 -- https://github.com/smartdevicelink/sdl_evolution/blob/master/proposals/0204-same-app-from-multiple-devices.md
--- Description: Registration of two mobile applications with the same appIDs and appNames which are match to the
--- nickname contained in PT from different mobiles.
+--   Description:
+-- Check of sending RPC on different functional groups by two mobile applications having the same appIDs
+-- and same appNames from different mobile devises.
 --   Precondition:
--- 1) PT contains entity ( appID = 1, nicknames = "Test Application" )
--- 2) SDL and HMI are started
--- 3) Mobile №1 and №2 are connected to SDL
+-- 1) create new custom functional group TestGroup_1 which contains AddCommand RPC (FULL, BACKGROUND, LIMITED, NONE)
+--    and does not contain AddSubMenu;
+-- 2) set this group for application with appID = 1
+-- 3) SDL and HMI are started
+-- 4) Mobile №1 and №2 are connected to SDL
+-- 5) Mobile №1 and №2 are registered successfully
+--
 --   Steps:
--- 1) Mobile №1 sends RegisterAppInterface request (appID = 1, appName = "Test Application") to SDL
+-- 1) Mobile №1 sent AddCommand RPC
 --   CheckSDL:
---     SDL sends RegisterAppInterface response( resultCode = SUCCESS  ) to Mobile №1
---     BasicCommunication.OnAppRegistered(...) notification to HMI
--- 2) Mobile №2 sends RegisterAppInterface request (appID = 1, appName = "Test Application") to SDL
+--     resends AddCommand RPC to HMI for Mobile №1 app1
+-- 2) Mobile №1 sent AddSubMenu RPC
 --   CheckSDL:
---     SDL sends RegisterAppInterface response( resultCode = SUCCESS  ) to Mobile №2
---     BasicCommunication.OnAppRegistered(...) notification to HMI
+--     sends response RPC( resultCode = "DISALLOWED" ) to Mobile №1
+-- 3) Mobile №2 sent AddCommand RPC
+--   CheckSDL:
+--     resends AddCommand RPC to HMI for Mobile №2 app2
+-- 4) Mobile №2 sent AddSubMenu RPC
+--   CheckSDL:
+--     sends response RPC( resultCode = "DISALLOWED" ) to Mobile №2
 ---------------------------------------------------------------------------------------------------
 --[[ Required Shared libraries ]]
 local runner = require('user_modules/script_runner')

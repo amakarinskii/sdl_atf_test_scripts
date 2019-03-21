@@ -1,21 +1,48 @@
 ---------------------------------------------------------------------------------------------------
 -- Proposal:
 -- https://github.com/smartdevicelink/sdl_evolution/blob/master/proposals/0204-same-app-from-multiple-devices.md
--- Description: Registration of two mobile applications with the same appIDs and appNames which are match to the
--- nickname contained in PT from different mobiles.
+-- Description: Check of sending RPC on different HMI levels by two mobile applications having the same appIDs and
+-- same appNames from different mobile devises.
 --   Precondition:
--- 1) PT contains entity ( appID = 1, nicknames = "Test Application" )
+-- 1) create new custom functional group TestGroup_1 containing RPCs: AddCommand (FULL),
+--    addSubMenu (BACKGROUND, LIMITED) and SendLocation(NONE);
 -- 2) SDL and HMI are started
 -- 3) Mobile №1 and №2 are connected to SDL
+-- 4) Mobile №1 and №2 are registered successfully
+--
 --   Steps:
--- 1) Mobile №1 sends RegisterAppInterface request (appID = 1, appName = "Test Application") to SDL
+-- 1) Mobile №1 sent SendLocation RPC
 --   CheckSDL:
---     SDL sends RegisterAppInterface response( resultCode = SUCCESS  ) to Mobile №1
---     BasicCommunication.OnAppRegistered(...) notification to HMI
--- 2) Mobile №2 sends RegisterAppInterface request (appID = 1, appName = "Test Application") to SDL
+--     resends SendLocation RPC to HMI for Mobile №1 app1
+-- 2) Mobile №1 sent AddCommand RPC
 --   CheckSDL:
---     SDL sends RegisterAppInterface response( resultCode = SUCCESS  ) to Mobile №2
---     BasicCommunication.OnAppRegistered(...) notification to HMI
+--     sends response RPC( resultCode = "DISALLOWED" ) to Mobile №1
+-- 3) Activate Mobile №1 app1 - in FULL mode now
+-- 4) Mobile №1 sent AddCommand RPC
+--   CheckSDL:
+--     resends AddCommand RPC to HMI for Mobile №1 app1
+-- 5) Mobile №1 sent SendLocation RPC
+--   CheckSDL:
+--     sends response RPC( resultCode = "DISALLOWED" ) to Mobile №1
+-- 6) Mobile №2 sent SendLocation RPC
+--   CheckSDL:
+--     resends SendLocation RPC to HMI for Mobile №2 app1
+-- 7) Mobile №2 sent AddCommand RPC
+--   CheckSDL:
+--     sends response RPC( resultCode = "DISALLOWED" ) to Mobile №2
+-- 8) Activate Mobile №2 app2 - in FULL mode now
+-- 9) Mobile №1 sent addSubMenu RPC
+--   CheckSDL:
+--     resends addSubMenu RPC to HMI for Mobile №1 app1
+-- 10) Mobile №1 sent SendLocation RPC
+--   CheckSDL:
+--     sends response RPC( resultCode = "DISALLOWED" ) to Mobile №1
+-- 11) Mobile №2 sent AddCommand RPC
+--   CheckSDL:
+--     resends AddCommand RPC to HMI for Mobile №2 app2
+-- 12) Mobile №2 sent SendLocation RPC
+--   CheckSDL:
+--     sends response RPC( resultCode = "DISALLOWED" ) to Mobile №2
 ---------------------------------------------------------------------------------------------------
 --[[ Required Shared libraries ]]
 local runner = require('user_modules/script_runner')
