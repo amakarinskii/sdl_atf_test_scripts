@@ -97,11 +97,11 @@ function m.isTableEqual(table1, table2)
   --compare arrays
   if json.isArray(table1) and json.isArray(table2) then
     local found_element
-    local copy_table2 = commonFunctions:cloneTable(table2)
+    local copy_table2 = m.cloneTable(table2)
     for i, _  in pairs(table1) do
       found_element = false
       for j, _ in pairs(copy_table2) do
-        if commonFunctions:is_table_equal(table1[i], copy_table2[j]) then
+        if m.isTableEqual(table1[i], copy_table2[j]) then
           copy_table2[j] = nil
           found_element = true
           break
@@ -122,7 +122,7 @@ function m.isTableEqual(table1, table2)
   local already_compared = {} --optimization
   for _,v1 in pairs(table1) do
     for k2,v2 in pairs(table2) do
-      if not already_compared[k2] and commonFunctions:is_table_equal(v1,v2) then
+      if not already_compared[k2] and m.isTableEqual(v1,v2) then
         already_compared[k2] = true
       end
     end

@@ -2,7 +2,6 @@
 -- Common module
 ---------------------------------------------------------------------------------------------------
 --[[ Required Shared libraries ]]
-local test = require("user_modules/dummy_connecttest")
 local utils = require('user_modules/utils')
 local actions = require('user_modules/sequences/actions')
 local events = require("events")
@@ -24,6 +23,7 @@ common.serviceType = constants.SERVICE_TYPE
 common.getDeviceName = utils.getDeviceName
 common.getDeviceMAC = utils.getDeviceMAC
 common.cloneTable = utils.cloneTable
+common.isTableContains = utils.isTableContains
 
 --[[ Common Functions ]]
 function common.start()
@@ -57,7 +57,7 @@ function common.connectMobDevice(pMobConnId, deviceInfo, isSDLAllowed)
   local mobConnectExp = common.mobile.connect(pMobConnId)
   if isSDLAllowed then
     mobConnectExp:Do(function()
-        common.init.allowSDL()
+        common.mobile.allowSDL(pMobConnId)
       end)
   end
 end
@@ -237,6 +237,362 @@ function common.subscribeOnButton(pAppId, pButtonName)
         {name = pButtonName, isSubscribed = true, appID = common.app.getHMIId(pAppId) })
     mobSession:ExpectResponse(cid, { success = true, resultCode = "SUCCESS" })
     mobSession:ExpectNotification("OnHashChange")
+end
+
+function common.sendLocation(pAppId, pResultCode)
+  local isSuccess = false
+  if pResultCode == "SUCCESS" then
+    isSuccess = true
+  end
+
+  local mobileSession = common.mobile.getSession(pAppId)
+  local corId = mobileSession:SendRPC("SendLocation", {
+      longitudeDegrees = 1.1,
+      latitudeDegrees = 1.1
+    })
+  if pResultCode == "SUCCESS" then
+    common.hmi.getConnection():ExpectRequest("Navigation.SendLocation")
+    :Do(function(_,data)
+        common.hmi.getConnection():SendResponse(data.id, data.method, "SUCCESS", {})
+      end)
+  end
+  mobileSession:ExpectResponse(corId, {success = isSuccess , resultCode = pResultCode})
+end
+
+function common.show(pAppId, pResultCode)
+  local isSuccess = false
+  if pResultCode == "SUCCESS" then
+    isSuccess = true
+  end
+
+  local mobileSession = common.mobile.getSession(pAppId)
+  local corId = mobileSession:SendRPC("Show", {mediaClock = "00:00:01", mainField1 = "Show1"})
+  if pResultCode == "SUCCESS" then
+    common.hmi.getConnection():ExpectRequest("UI.Show")
+    :Do(function(_,data)
+        common.hmi.getConnection():SendResponse(data.id, "UI.Show", "SUCCESS", {})
+      end)
+  end
+  mobileSession:ExpectResponse(corId, { success = isSuccess, resultCode = pResultCode})
+end
+
+function common.funcGroupConsentForApp(pPrompts, pAppId)
+
+  local function findFunctionalGroupIds(pAllowedFunctions, pGroupName)
+    local ids = {}
+    for _, allowedFunc in pairs(pAllowedFunctions) do
+      if allowedFunc.name == pGroupName then
+        table.insert(ids, allowedFunc.id)
+      end
+    end
+    return ids
+  end
+
+  local function addConsentedFunctionsItems(pAllowedFunctions, pPromptItem, rConsentedFunctions)
+    local groupIds = findFunctionalGroupIds(pAllowedFunctions, pPromptItem.name)
+    if not next(groupIds) then
+      common.run.fail("Unknown user consent prompt:" .. pPromptItem.name)
+      return
+    end
+    for _, groupId in ipairs(groupIds) do
+      local item = common.cloneTable(pPromptItem)
+      item.id = groupId
+      table.insert(rConsentedFunctions, item)
+    end
+  end
+
+  local hmiAppID = nil
+  if pAppId then
+    hmiAppID = common.app.getHMIId(pAppId)
+    if not hmiAppID then
+      common.run.fail("Unknown mobile application number:" .. pAppId)
+    end
+  end
+
+  local corId = common.hmi.getConnection():SendRequest("SDL.GetListOfPermissions", { appID = hmiAppID})
+  common.hmi.getConnection():ExpectResponse(corId)
+  :Do(function(_,data)
+      local consentedFunctions = {}
+      for _, promptItem in pairs(pPrompts) do
+        addConsentedFunctionsItems(data.result.allowedFunctions, promptItem, consentedFunctions)
+      end
+
+      common.hmi.getConnection():SendNotification("SDL.OnAppPermissionConsent",
+        {
+          appID = hmiAppID,
+          source = "GUI",
+          consentedFunctions = consentedFunctions
+        })
+    end)
+end
+
+function common.getModuleControlData(module_type)
+  local out = { moduleType = module_type }
+  if module_type == "CLIMATE" then
+    out.climateControlData = {
+      fanSpeed = 30,
+      desiredTemperature = {
+        unit = "CELSIUS",
+        value = 11.5
+      },
+      acEnable = true,
+      circulateAirEnable = true,
+      autoModeEnable = true,
+      defrostZone = "FRONT",
+      dualModeEnable = true,
+      acMaxEnable = true,
+      ventilationMode = "BOTH",
+      heatedSteeringWheelEnable = true,
+      heatedWindshieldEnable = true,
+      heatedRearWindowEnable = true,
+      heatedMirrorsEnable = true
+    }
+  elseif module_type == "RADIO" then
+    out.radioControlData = {
+      frequencyInteger = 1,
+      frequencyFraction = 2,
+      band = "AM",
+      hdChannel = 1,
+      radioEnable = true,
+      hdRadioEnable = true,
+    }
+  elseif module_type == "LIGHT" then
+    out.lightControlData = {
+      lightState = {
+        {
+          id = "FRONT_LEFT_HIGH_BEAM",
+          status = "ON",
+          density = 0.5,
+          color = {
+            red = 5,
+            green = 15,
+            blue = 20
+          }
+        }
+      }
+    }
+  end
+  return out
+end
+
+local function sortModules(pModulesArray)
+  local function f(a, b)
+    if a.moduleType and b.moduleType then
+      return a.moduleType < b.moduleType
+    elseif a and b then
+      return a < b
+    end
+    return 0
+  end
+  table.sort(pModulesArray, f)
+end
+
+function common.expectOnRCStatusOnMobile(pAppId, pExpData)
+  common.mobile.getSession(pAppId):ExpectNotification("OnRCStatus")
+  :ValidIf(function(_, d)
+     sortModules(pExpData.freeModules)
+     sortModules(pExpData.allocatedModules)
+     sortModules(d.payload.freeModules)
+     sortModules(d.payload.allocatedModules)
+     return compareValues(pExpData, d.payload, "payload")
+   end)
+ :ValidIf(function(_, d)
+   if d.payload.allowed == nil  then
+     return false, "OnRCStatus notification doesn't contains 'allowed' parameter"
+   end
+   return true
+ end)
+end
+
+function common.expectOnRCStatusOnHMI(pExpDataTable)
+  local usedHmiAppIds = {}
+  local appCount = 0;
+  for _,_ in pairs(pExpDataTable) do
+    appCount = appCount + 1
+  end
+  common.hmi.getConnection():ExpectNotification("RC.OnRCStatus")
+  :ValidIf(function(_, d)
+      if d.params.allowed ~= nil then
+        return false, "RC.OnRCStatus notification contains unexpected 'allowed' parameter"
+      end
+
+      local hmiAppId = d.params.appID
+      usedHmiAppIds[hmiAppId] = true
+
+      if pExpDataTable[hmiAppId] and not usedHmiAppIds[hmiAppId] then
+        sortModules(pExpDataTable[hmiAppId].freeModules)
+        sortModules(pExpDataTable[hmiAppId].allocatedModules)
+        sortModules(d.params.freeModules)
+        sortModules(d.params.allocatedModules)
+        return compareValues(pExpDataTable[hmiAppId], d.params, "params")
+      else
+        local msg
+        if usedHmiAppIds[hmiAppId] then
+          msg = "To many occurrences of RC.OnRCStatus notification for hmiAppId: " .. hmiAppId
+        else
+          msg = "Unexpected RC.OnRCStatus notification for hmiAppId: " .. hmiAppId
+        end
+        return false, msg
+      end
+    end)
+  :Times(appCount)
+end
+
+function common.defineRAMode(pAllowed, pAccessMode)
+  common.hmi.getConnection():SendNotification("RC.OnRemoteControlSettings",
+      {allowed = pAllowed, accessMode = pAccessMode})
+  common.run.wait(common.minTimeout) -- workaround due to issue with SDL -> redundant OnHMIStatus notification is sent
+end
+
+local function successHmiRequestSetInteriorVehicleData(pAppId, pModuleControlData)
+  common.hmi.getConnection():ExpectRequest("RC.SetInteriorVehicleData", {
+    appID = common.app.getHMIId(pAppId),
+    moduleData = pModuleControlData
+  })
+  :Do(function(_, data)
+      common.hmi.getConnection():SendResponse(data.id, data.method, "SUCCESS", {
+        moduleData = pModuleControlData
+      })
+    end)
+end
+
+function common.rpcAllowed(pAppId, pModuleType)
+  local moduleControlData = common.getModuleControlData(pModuleType)
+  local mobSession = common.mobile.getSession(pAppId)
+  local cid = mobSession:SendRPC("SetInteriorVehicleData", {
+        moduleData = moduleControlData
+      })
+  successHmiRequestSetInteriorVehicleData(pAppId, moduleControlData)
+  mobSession:ExpectResponse(cid, { success = true, resultCode = "SUCCESS" })
+end
+
+function common.rpcAllowedWithConsent(pModuleType, pAppId)
+  local moduleControlData = common.getModuleControlData(pModuleType)
+  local mobSession = common.mobile.getSession(pAppId)
+  local cid = mobSession:SendRPC("SetInteriorVehicleData", {
+        moduleData = moduleControlData
+      })
+  common.hmi.getConnection():ExpectRequest("RC.GetInteriorVehicleDataConsent", {
+        appID = common.app.getHMIId(pAppId),
+        moduleType = pModuleType
+      })
+  :Do(function(_, data)
+      common.hmi.getConnection():SendResponse(data.id, data.method, "SUCCESS", {allowed = true})
+      successHmiRequestSetInteriorVehicleData(pAppId, moduleControlData)
+    end)
+  mobSession:ExpectResponse(cid, { success = true, resultCode = "SUCCESS" })
+end
+
+function common.rpcDenied(pModuleType, pAppId, pResultCode)
+  local moduleControlData = common.getModuleControlData(pModuleType)
+  local mobSession = common.mobile.getSession(pAppId)
+  local cid = mobSession:SendRPC("SetInteriorVehicleData", {
+        moduleData = moduleControlData
+      })
+  common.hmi.getConnection():ExpectRequest("RC.SetInteriorVehicleData", {}):Times(0)
+  mobSession:ExpectResponse(cid, { success = false, resultCode = pResultCode })
+end
+
+function common.rpcRejectWithConsent(pModuleType, pAppId)
+  local info = "The resource is in use and the driver disallows this remote control RPC"
+  local moduleControlData = common.getModuleControlData(pModuleType)
+  local mobSession = common.mobile.getSession(pAppId)
+  local cid = mobSession:SendRPC("SetInteriorVehicleData", {
+        moduleData = moduleControlData
+      })
+  common.hmi.getConnection():ExpectRequest("RC.GetInteriorVehicleDataConsent", {
+        appID = common.app.getHMIId(pAppId),
+        moduleType = pModuleType
+      })
+  :Do(function(_, data)
+      common.hmi.getConnection():SendResponse(data.id, data.method, "SUCCESS", {allowed = false})
+      common.hmi.getConnection():ExpectRequest("RC.SetInteriorVehicleData", {}):Times(0)
+    end)
+  mobSession:ExpectResponse(cid, { success = false, resultCode = "REJECTED", info = info })
+end
+
+function common.ignitionOff(pDevices, pExpFunc)
+  local isOnSDLCloseSent = false
+  local hmi = common.hmi.getConnection()
+  if pExpFunc then pExpFunc() end
+  hmi:SendNotification("BasicCommunication.OnExitAllApplications", { reason = "SUSPEND" })
+  hmi:ExpectNotification("BasicCommunication.OnSDLPersistenceComplete")
+  :Do(function()
+      hmi:SendNotification("BasicCommunication.OnExitAllApplications", { reason = "IGNITION_OFF" })
+      hmi:ExpectNotification("BasicCommunication.OnSDLClose")
+      :Do(function()
+          isOnSDLCloseSent = true
+        end)
+      :Times(AtMost(1))
+    end)
+  common.wait(3000)
+  :Do(function()
+      if isOnSDLCloseSent == false then common.cprint(35, "BC.OnSDLClose was not sent") end
+      if common.sdl.isRunning() then common.sdl.StopSDL() end
+      for i in pairs(pDevices) do
+        common.mobile.deleteConnection(i)
+      end
+    end)
+end
+
+function common.addCommand(pAppId, pData)
+  local session = common.mobile.getSession()
+  local hmi = common.hmi.getConnection()
+  local cid = session(pAppId):SendRPC("AddCommand", pData.mob)
+  hmi:ExpectRequest("VR.AddCommand", pData.hmi)
+  :Do(function(_, data)
+      hmi:SendResponse(data.id, data.method, "SUCCESS", {})
+    end)
+  session(pAppId):ExpectResponse(cid, { success = true, resultCode = "SUCCESS" })
+  return session(pAppId):ExpectNotification("OnHashChange")
+end
+
+function common.addSubMenu(pAppId, pData)
+  local session = common.mobile.getSession(pAppId)
+  local hmi = common.hmi.getConnection()
+  local cid = session:SendRPC("AddSubMenu", pData.mob)
+  hmi:ExpectRequest("UI.AddSubMenu", pData.hmi)
+  :Do(function(_, data)
+      hmi:SendResponse(data.id, data.method, "SUCCESS", {})
+    end)
+  session:ExpectResponse(cid, { success = true, resultCode = "SUCCESS" })
+  return session:ExpectNotification("OnHashChange")
+end
+
+function common.reRegisterAppEx(pAppId, pMobConnId, pAppData, pExpResDataFunc)
+  local params = common.cloneTable(common.app.getParams(pAppId))
+  params.hashID = pAppData.hashId
+  local hmiAppId = pAppData.hmiAppId
+
+  local session = common.mobile.createSession(pAppId, pMobConnId)
+  local connection = session.mobile_session_impl.connection
+  session:StartService(7)
+  :Do(function()
+      if pExpResDataFunc then pExpResDataFunc() end
+      local cid = session:SendRPC("RegisterAppInterface", params)
+      common.hmi.getConnection():ExpectNotification("BasicCommunication.OnAppRegistered",
+        {
+          application = {
+            appName = params.appName,
+            appID = hmiAppId,
+            deviceInfo = {
+              name = common.getDeviceName(connection.host, connection.port),
+              id = common.getDeviceMAC(connection.host, connection.port)
+            }
+          }
+        })
+      :Do(function(_, d1)
+        common.app.setHMIId(d1.params.application.appID, pAppId)
+        end)
+      session:ExpectResponse(cid, { success = true, resultCode = "SUCCESS" })
+    end)
+end
+
+function common.unexpectedDisconnect(pAppId)
+  if pAppId == nil then pAppId = 1 end
+  common.hmi.getConnection():ExpectNotification("BasicCommunication.OnAppUnregistered",
+    { unexpectedDisconnect = true, appID = common.app.getHMIId(pAppId) })
+  common.mobile.deleteSession(pAppId)
 end
 
 return common
