@@ -61,7 +61,7 @@ local function modifyWayPointGroupInPT(pt)
   pt.policy_table.app_policies[appParams[2].fullAppID].groups = {"Base-4", "Location-1"}
 end
 
-local function sendSubscribeVehicleData1(pAppId, pFirstApp)
+local function subscribeOnSpeed(pAppId, pFirstApp)
   local mobSession = common.mobile.getSession(pAppId)
   local cid = mobSession:SendRPC("SubscribeVehicleData", { speed = true })
   if pFirstApp then
@@ -74,7 +74,7 @@ local function sendSubscribeVehicleData1(pAppId, pFirstApp)
     mobSession:ExpectNotification( "OnHashChange" )
 end
 
-local function sendSubscribeVehicleData2(pAppId, pFirstApp)
+local function subscribeOnSpeedAndGPS(pAppId, pFirstApp)
   local mobSession = common.mobile.getSession(pAppId)
   local cid = mobSession:SendRPC("SubscribeVehicleData", { speed = true, gps = true })
   if pFirstApp then
@@ -88,40 +88,29 @@ local function sendSubscribeVehicleData2(pAppId, pFirstApp)
     mobSession:ExpectNotification("OnHashChange")
 end
 
-local function sendOnVehicleData1(pAppId1, pAppId2, pNumberOfAppsSubscribed, pData)
+local function sendOnVehicleData1(pAppId1, pAppId2, pData)
   local mobSession1 = common.mobile.getSession(pAppId1)
   local mobSession2 = common.mobile.getSession(pAppId2)
-  local pTime1, pTime2
-  local pNAS = pNumberOfAppsSubscribed               -- defines how many apps should get this notification
-
-  if     pNAS == 0 then pTime1 = 0; pTime2 = 0
-  elseif pNAS == 1 then pTime1 = 1; pTime2 = 0
-  elseif pNAS == 2 then pTime1 = 1; pTime2 = 1 end
 
   if "gps" == pData then
-    common.hmi.getConnection():SendNotification("VehicleInfo.OnVehicleData",  {gps = {1.1, 1.1}} )
-    mobSession1:ExpectNotification("OnVehicleData", {gps = {1.1, 1.1}} ):Times(pTime1)
-    mobSession2:ExpectNotification("OnVehicleData", {gps = {1.1, 1.1}} ):Times(pTime2)
-  else
+    common.hmi.getConnection():SendNotification("VehicleInfo.OnVehicleData", {gps = {longitudeDegrees =1.1,
+                                                                                     latitudeDegrees = 1.1}} )
+    mobSession1:ExpectNotification("OnVehicleData",{gps = {longitudeDegrees =1.1, latitudeDegrees = 1.1}})
+    mobSession2:ExpectNotification("OnVehicleData",{gps = {longitudeDegrees =1.1, latitudeDegrees = 1.1}}):Times(0)
+  elseif "speed" == pData then
     common.hmi.getConnection():SendNotification("VehicleInfo.OnVehicleData",  { speed = 60.5 } )
-    mobSession1:ExpectNotification("OnVehicleData", { speed = 60.5 } ):Times(pTime1)
-    mobSession2:ExpectNotification("OnVehicleData", { speed = 60.5 } ):Times(pTime2)
+    mobSession1:ExpectNotification("OnVehicleData", { speed = 60.5 } )
+    mobSession2:ExpectNotification("OnVehicleData", { speed = 60.5 } ):Times(0)
   end
 end
 
-local function sendOnVehicleData2(pAppId1, pAppId2, pNumberOfAppsSubscribed)
+local function sendOnVehicleData2(pAppId1, pAppId2)
   local mobSession1 = common.mobile.getSession(pAppId1)
   local mobSession2 = common.mobile.getSession(pAppId2)
-  local pTime1, pTime2
-  local pNAS = pNumberOfAppsSubscribed               -- defines how many apps should get this notification
-
-  if     pNAS == 0 then pTime1 = 0; pTime2 = 0
-  elseif pNAS == 1 then pTime1 = 1; pTime2 = 0
-  elseif pNAS == 2 then pTime1 = 1; pTime2 = 1 end
-
-  common.hmi.getConnection():SendNotification("VehicleInfo.OnVehicleData", { speed = 60.5 , {gps = {1.1, 1.1}} })
-  mobSession1:ExpectNotification("OnVehicleData",{ speed = 60.5 }):Times(pTime1)
-  mobSession2:ExpectNotification("OnVehicleData",{ speed = 60.5 , gps = {1.1, 1.1} }):Times(pTime2)
+  common.hmi.getConnection():SendNotification("VehicleInfo.OnVehicleData",
+                                                 { speed = 60.5 , gps = {longitudeDegrees =1.1, latitudeDegrees = 1.1}})
+  mobSession1:ExpectNotification("OnVehicleData",{ speed = 60.5 })
+  mobSession2:ExpectNotification("OnVehicleData",{ speed = 60.5 , gps = {longitudeDegrees =1.1, latitudeDegrees = 1.1}})
 end
 
 --[[ Scenario ]]
@@ -135,13 +124,13 @@ runner.Step("Register App2 from device 2", common.registerAppEx, { 2, appParams[
 runner.Step("Activate App 1", common.app.activate, { 1 })
 
 runner.Title("Test")
-runner.Step("App1 from Mobile 1 requests SubscribeVehicleData", sendSubscribeVehicleData1, { 1, true })
-runner.Step("HMI sends OnVehicleData - App 1 receives",         sendOnVehicleData1, { 1, 2, 1, "speed" })
+runner.Step("App1 from Mobile 1 requests Subscribe on Speed", subscribeOnSpeed, { 1, true })
+runner.Step("HMI sends OnVehicleData - App 1 receives",       sendOnVehicleData1, { 1, 2, 1, "speed" })
 
 runner.Step("Activate App 2", common.app.activate, { 2 })
-runner.Step("App2 from Mobile 2 requests SubscribeVehicleData", sendSubscribeVehicleData2, { 2, true })
-runner.Step("HMI sends OnVehicleData - App 2 receives",         sendOnVehicleData1, { 2, 1, 1, "gps" })
-runner.Step("HMI sends OnVehicleData - Apps 1 and 2 receive",   sendOnVehicleData2, { 1, 2, 2 })
+runner.Step("App2 from Mobile 2 requests Subscribe on Speed and GPS", subscribeOnSpeedAndGPS, { 2, true })
+runner.Step("HMI sends OnVehicleData - App 2 receives",       sendOnVehicleData1, { 2, 1, 1, "gps" })
+runner.Step("HMI sends OnVehicleData - Apps 1 and 2 receive", sendOnVehicleData2, { 1, 2 })
 
 runner.Title("Postconditions")
 runner.Step("Remove mobile devices", common.clearMobDevices, {devices})

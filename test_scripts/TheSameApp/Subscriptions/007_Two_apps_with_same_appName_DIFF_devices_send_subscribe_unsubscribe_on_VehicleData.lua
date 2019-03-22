@@ -106,8 +106,9 @@ local function sendOnVehicleData(pAppId1, pAppId2, pAppToBeNotified)
   elseif pNAS == 2 then pTime1 = 1; pTime2 = 1
   end
 
-  common.hmi.getConnection():SendNotification("VehicleInfo.OnVehicleData", { speed = 60.5 , {gps = {1.1, 1.1}} })
-  mobSession1:ExpectNotification("OnVehicleData", { gps = {1.1, 1.1} } ):Times(pTime1)
+  common.hmi.getConnection():SendNotification("VehicleInfo.OnVehicleData",
+                                             { speed = 60.5 , gps = {longitudeDegrees =1.1, latitudeDegrees = 1.1} })
+  mobSession1:ExpectNotification("OnVehicleData", {gps = {longitudeDegrees =1.1, latitudeDegrees = 1.1}} ):Times(pTime1)
   mobSession2:ExpectNotification("OnVehicleData", { speed = 60.5 } ):Times(pTime2)
 end
 
@@ -115,8 +116,7 @@ local function sendUnsubscribeGPS(pAppId, pLastApp)
   local mobSession = common.mobile.getSession(pAppId)
   local cid = mobSession:SendRPC("UnsubscribeVehicleData", { gps = true })
   if pLastApp then
-    common.hmi.getConnection():ExpectRequest(
-                     "VehicleInfo.UnsubscribeVehicleData", { gps = true })
+    common.hmi.getConnection():ExpectRequest("VehicleInfo.UnsubscribeVehicleData", { gps = true })
     :Do(function(_,data)
          common.hmi.getConnection():SendResponse( data.id, data.method, "SUCCESS" )
       end)
