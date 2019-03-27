@@ -69,12 +69,14 @@ end
 local function sendSubscribeWayPoints(pAppId, pIsAFirstApp)
   local mobSession = common.mobile.getSession(pAppId)
   local cid = mobSession:SendRPC("SubscribeWayPoints", {})
-  if pIsAFirstApp then                                                          -- SDL -> HMI - should send this request
-    common.hmi.getConnection():ExpectRequest("Navigation.SubscribeWayPoints")   -- only when 1st app get subscribed
+  local pTime = 0
+  if pIsAFirstApp then pTime = 1 end
+
+  -- SDL -> HMI should send this request only when 1st app is subscribing
+    common.hmi.getConnection():ExpectRequest("Navigation.SubscribeWayPoints"):Times(pTime)
     :Do(function(_,data)
          common.hmi.getConnection():SendResponse(data.id, data.method, "SUCCESS", {})
       end)
-  end
     mobSession:ExpectResponse(cid, { success = true, resultCode = "SUCCESS" })
     mobSession:ExpectNotification("OnHashChange")
 end

@@ -74,12 +74,14 @@ end
 local function sendSubscribeWayPoints(pAppId, pIsAFirstApp)
   local mobSession = common.mobile.getSession(pAppId)
   local cid = mobSession:SendRPC("SubscribeWayPoints", {})
-  if pIsAFirstApp then                                                          -- SDL -> HMI - should send this request
-    common.hmi.getConnection():ExpectRequest("Navigation.SubscribeWayPoints")   -- only when 1st app get subscribed
+  local pTime = 0
+  if pIsAFirstApp then pTime = 1 end
+
+  -- SDL -> HMI should send this request only when 1st app is subscribing
+    common.hmi.getConnection():ExpectRequest("Navigation.SubscribeWayPoints"):Times(pTime)
     :Do(function(_,data)
          common.hmi.getConnection():SendResponse(data.id, data.method, "SUCCESS", {})
       end)
-  end
     mobSession:ExpectResponse(cid, { success = true, resultCode = "SUCCESS" })
     mobSession:ExpectNotification("OnHashChange")
 end
@@ -99,14 +101,18 @@ local function sendOnWayPointChange(pAppId1, pAppId2, pNumberOfAppsSubscribed)
   mobSession2:ExpectNotification("OnWayPointChange",{ wayPoints = {pWayPoints} }):Times(pTime2)
 end
 
-local function sendUnsubscribeWayPoints(pAppId)
+local function sendUnsubscribeWayPoints(pAppId, pIsLastApp)
   local mobSession = common.mobile.getSession(pAppId)
   local cid = mobSession:SendRPC("UnsubscribeWayPoints", {})
-    common.hmi.getConnection():ExpectRequest("Navigation.UnsubscribeWayPoints")
+  local pTime = 0
+  if pIsLastApp then pTime = 1 end
+
+  -- SDL -> HMI should send this request only when last app is unsubscribing
+    common.hmi.getConnection():ExpectRequest("Navigation.UnsubscribeWayPoints"):Times(pTime)
     :Do(function(_,data)
          common.hmi.getConnection():SendResponse(data.id, data.method, "SUCCESS",{})
       end)
-    mobSession:ExpectResponse(cid, { success = true, resultCode = "SUCCESS" })
+  mobSession:ExpectResponse(cid, { success = true, resultCode = "SUCCESS" })
     mobSession:ExpectNotification("OnHashChange")
 end
 
@@ -131,7 +137,7 @@ runner.Step("App 1 from Mobile 1 unsubscribes from WayPoints", sendUnsubscribeWa
 runner.Step("HMI sends OnWayPointChange - App 1 does NOT receive", sendOnWayPointChange, { 2, 1, 1 })
 
 runner.Step("Activate App 2", common.app.activate, { 2 })
-runner.Step("App 2 from Mobile 2 unsubscribes from WayPoints",     sendUnsubscribeWayPoints, { 2 })
+runner.Step("App 2 from Mobile 2 unsubscribes from WayPoints",     sendUnsubscribeWayPoints, { 2, true })
 runner.Step("HMI sends OnWayPointChange - App 1 and 2 do NOT receive", sendOnWayPointChange, { 2, 1, 0 })
 
 runner.Title("Postconditions")
