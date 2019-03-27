@@ -51,18 +51,15 @@ local function sendOnButtonEventPress(pAppId1, pAppId2, pButtonName, pNumberOfDe
   local mobSession1 = common.mobile.getSession(pAppId1)
   local mobSession2 = common.mobile.getSession(pAppId2)
   local pTime = pNumberOfDevicesSubscribed
-  local pTime2 = 0
-
-  if pNumberOfDevicesSubscribed == 2 then pTime2 = 1 end
 
   common.hmi.getConnection():SendNotification("Buttons.OnButtonEvent",
     {name = pButtonName, mode = "BUTTONDOWN", appID = common.app.getHMIId(pAppId1) })
   mobSession1:ExpectNotification("OnButtonEvent",{buttonName = pButtonName, buttonEventMode="BUTTONDOWN"}):Times(pTime)
-  mobSession2:ExpectNotification("OnButtonEvent",{buttonName = pButtonName, buttonEventMode="BUTTONDOWN"}):Times(pTime2)
+  mobSession2:ExpectNotification("OnButtonEvent",{buttonName = pButtonName, buttonEventMode="BUTTONDOWN"}):Times(0)
   common.hmi.getConnection():SendNotification("Buttons.OnButtonPress",
     {name = pButtonName, mode = "LONG", appID = common.app.getHMIId(pAppId1)})
   mobSession1:ExpectNotification("OnButtonPress",{buttonName = pButtonName, buttonPressMode = "LONG"}):Times(pTime)
-  mobSession2:ExpectNotification("OnButtonPress",{buttonName = pButtonName, buttonPressMode = "LONG"}):Times(pTime2)
+  mobSession2:ExpectNotification("OnButtonPress",{buttonName = pButtonName, buttonPressMode = "LONG"}):Times(0)
 end
 
 local function hmiLeveltoLimited(pAppId)
@@ -90,7 +87,7 @@ runner.Step("HMI send OnButtonEvent and OnButtonPress for OK", sendOnButtonEvent
 runner.Step("Send App 1 to LIMITED HMI level", hmiLeveltoLimited, { 1 })
 runner.Step("Activate App 2", common.app.activate, { 2 })
 runner.Step("App 2 from Mobile 2 requests Subscribe on Ok",  common.subscribeOnButton, {2, "OK" })
-runner.Step("HMI send OnButtonEvent and OnButtonPress for OK", sendOnButtonEventPress, {2, 1, "OK", 2})
+runner.Step("HMI send OnButtonEvent and OnButtonPress for OK", sendOnButtonEventPress, {2, 1, "OK", 1})
 
 runner.Title("Postconditions")
 runner.Step("Remove mobile devices", common.clearMobDevices, {devices})
