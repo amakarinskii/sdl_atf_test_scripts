@@ -1,10 +1,11 @@
 ---------------------------------------------------------------------------------------------------
---   Proposal:
+-- Proposal:
 -- https://github.com/smartdevicelink/sdl_evolution/blob/master/proposals/0204-same-app-from-multiple-devices.md
---   Description:
+-- Description:
 -- Check how SDL responds when same applications from different mobiles having the same appNames and different appIDs
 -- send StartService requests using different protocol versions.
---   Precondition:
+--
+-- Preconditions:
 -- 1) SDL and HMI are started
 -- 2) Mobile №1 and №2 are connected to SDL
 -- 3) Default protocol version is set into '2'
@@ -13,14 +14,15 @@
 -- 5) Set protocol version into '3'
 -- 6) Mobile №2 sends RegisterAppInterface request (appID = 00022, appName = "Test Application", api version = 5.0)
 -- to SDL
---   Steps:
+--
+-- Steps:
 -- 1) Mobile №1 App1 send StartService request for Video streaming
---   Check SDL:
---     responds with StartServiceNACK to Mobile №1
+--   Check:
+--    SDL responds with StartServiceNACK to Mobile №1
 -- 2) Mobile №2 App2 send StartService request for Video streaming
---   Check SDL:
---     sends Navigation.StartStream Video streaming request to HMI
---     responds with StartServiceACK to Mobile №2
+--   Check:
+--    SDL sends Navigation.StartStream Video streaming request to HMI
+--    SDL responds with StartServiceACK to Mobile №2
 ---------------------------------------------------------------------------------------------------
 --[[ Required Shared libraries ]]
 local runner = require('user_modules/script_runner')

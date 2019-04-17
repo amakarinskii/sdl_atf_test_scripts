@@ -1,25 +1,27 @@
 ---------------------------------------------------------------------------------------------------
---   Proposal:
+-- Proposal:
 -- https://github.com/smartdevicelink/sdl_evolution/blob/master/proposals/0204-same-app-from-multiple-devices.md
---   Description:
--- Check that same applications from different mobiles having the same appNames and  appIDs
+-- Description:
+-- Check that same applications from different mobiles having the same appNames and appIDs
 -- successfully subscribe on different buttons while reporting different API versions.
---   Precondition:
+--
+-- Preconditions:
 -- 1) SDL and HMI are started
 -- 2) Mobile №1 and №2 are connected to SDL
 -- 3) Mobile №1 sends RegisterAppInterface request (appID = 0001, appName = "Test Application", api version = 4.5)
 -- to SDL
 -- 4) Mobile №2 sends RegisterAppInterface request (appID = 0001, appName = "Test Application", api version = 5.0)
 -- to SDL
---   Steps:
+--
+-- Steps:
 -- 1) Mobile №1 App1 requests SubscribeButton ("PRESET_0")
---   Check SDL:
---     sends Buttons.OnButtonSubscription ( appId, isSubscribed = true, name = "PRESET_0" ) to HMI
---     responds SubscribeButton (SUCCESS) to Mobile №1
+--   Check:
+--    SDL sends Buttons.OnButtonSubscription ( appId, isSubscribed = true, name = "PRESET_0" ) to HMI
+--    SDL responds SubscribeButton (SUCCESS) to Mobile №1
 -- 2) Mobile №2 App2 requests SubscribeButton ("PLAY_PAUSE")
---   Check SDL:
---     sends Buttons.OnButtonSubscription ( appId, isSubscribed = true, name = "PLAY_PAUSE" ) to HMI
---     responds SubscribeButton (SUCCESS) to Mobile №2
+--   Check:
+--    SDL sends Buttons.OnButtonSubscription ( appId, isSubscribed = true, name = "PLAY_PAUSE" ) to HMI
+--    SDL responds SubscribeButton (SUCCESS) to Mobile №2
 ---------------------------------------------------------------------------------------------------
 --[[ Required Shared libraries ]]
 local runner = require('user_modules/script_runner')
