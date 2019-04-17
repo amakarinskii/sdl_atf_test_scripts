@@ -1,24 +1,27 @@
 ---------------------------------------------------------------------------------------------------
--- Proposal:
+--   Proposal:
 -- https://github.com/smartdevicelink/sdl_evolution/blob/master/proposals/0204-same-app-from-multiple-devices.md
--- Description: Registration of two mobile applications with the same appIDs and appNames which are match to the
--- nickname contained in PT from different mobiles.
---   Precondition:
+--   Description:
+-- Check how SDL responds when same applications from different mobiles having the same appNames and different appIDs
+-- send getSystemCapability requests using different protocol versions.
 --   Precondition:
 -- 1) SDL and HMI are started
 -- 2) Mobile №1 and №2 are connected to SDL
--- 3) Mobile №1 sends RegisterAppInterface request (appID = 0001,  appName = "Test Application", api version = 2.0)
+-- 3) Default protocol version is set into '2'
+-- 4) Mobile №1 sends RegisterAppInterface request (appID = 0001,  appName = "Test Application", api version = 2.0)
 -- to SDL
--- 4) Mobile №2 sends RegisterAppInterface request (appID = 00022, appName = "Test Application", api version = 5.0)
+-- 5) Set protocol version into '5'
+-- 6) Mobile №2 sends RegisterAppInterface request (appID = 00022, appName = "Test Application", api version = 5.0)
 -- to SDL
---   In case:
+--   Steps:
 -- 1) Mobile №1 App1 requests GetSystemCapability
---   CheckSDL:
+--   Check SDL:
 --     does NOT send GetSystemCapability request to HMI
+--     sends GetSystemCapability response ("DISALLOWED") to Mobile №1
 -- 2) Mobile №2 App2 requests GetSystemCapability
---   CheckSDL:
+--   Check SDL:
 --     sends GetSystemCapability request to HMI
---     sends GetSystemCapability respond to Mobile №2
+--     sends GetSystemCapability response ("SUCCESS") to Mobile №2
 ---------------------------------------------------------------------------------------------------
 --[[ Required Shared libraries ]]
 local runner = require('user_modules/script_runner')
@@ -27,7 +30,7 @@ local common = require('test_scripts/TheSameApp/commonTheSameApp')
 --[[ Test Configuration ]]
 runner.testSettings.isSelfIncluded = false
 
-config.defaultProtocolVersion = 3
+config.defaultProtocolVersion = 2
 
 --[[ Local Data ]]
 local devices = {

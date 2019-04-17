@@ -1,9 +1,9 @@
 ---------------------------------------------------------------------------------------------------
--- Proposal:
+--   Proposal:
 -- https://github.com/smartdevicelink/sdl_evolution/blob/master/proposals/0204-same-app-from-multiple-devices.md
--- Description: Registration of two mobile applications with the same appIDs and appNames which are match to the
--- nickname contained in PT from different mobiles.
---   Precondition:
+--   Description:
+-- Check that same applications from different mobiles having the same appNames and different appIDs
+-- successfully subscribe on different buttons while reporting different API versions.
 --   Precondition:
 -- 1) SDL and HMI are started
 -- 2) Mobile №1 and №2 are connected to SDL
@@ -11,13 +11,13 @@
 -- to SDL
 -- 4) Mobile №2 sends RegisterAppInterface request (appID = 00022, appName = "Test Application", api version = 5.0)
 -- to SDL
---   In case:
+--   Steps:
 -- 1) Mobile №1 App1 requests SubscribeButton ("PRESET_0")
---   CheckSDL:
+--   Check SDL:
 --     sends Buttons.OnButtonSubscription ( appId, isSubscribed = true, name = "PRESET_0" ) to HMI
 --     responds SubscribeButton (SUCCESS) to Mobile №1
 -- 2) Mobile №2 App2 requests SubscribeButton ("PLAY_PAUSE")
---   CheckSDL:
+--   Check SDL:
 --     sends Buttons.OnButtonSubscription ( appId, isSubscribed = true, name = "PLAY_PAUSE" ) to HMI
 --     responds SubscribeButton (SUCCESS) to Mobile №2
 ---------------------------------------------------------------------------------------------------
