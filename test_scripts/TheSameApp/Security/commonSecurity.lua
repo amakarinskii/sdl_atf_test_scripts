@@ -8,7 +8,7 @@
 --[[ Required Shared libraries ]]
 local actions = require("user_modules/sequences/actions")
 local common = require('test_scripts/TheSameApp/commonTheSameApp')
--- local security = require("user_modules/sequences/security")
+local security = require("user_modules/sequences/security")
 local utils = require("user_modules/utils")
 local test = require("user_modules/dummy_connecttest")
 local constants = require('protocol_handler/ford_protocol_constants')
