@@ -74,13 +74,11 @@ runner.Step("Activate App 1", common.activateApp, { 1 })
 
 runner.Title("Test")
 runner.Step ("Start RPC Service protected for App 1", common.startServiceProtected, { 7, 1 })
-runner.Step ("Mobile 1 sends secure   RPC in protected mode", common.protectedModeRPC, { 1, addCommandParams[1] })
+runner.Step ("Mobile 1 sends secure RPC in protected mode",   common.protectedModeRPC, { 1, addCommandParams[1] })
 runner.Step ("Mobile 1 sends insecure RPC in protected mode", common.nonProtectedRPC,  { 1, addCommandParams[2], true })
 
 runner.Step ("Activate App 2", common.activateApp, { 2 })
 runner.Step ("Mobile 2 sends insecure RPC in NON protected mode", common.nonProtectedRPC,{2, addCommandParams[1],false})
--- below is the step that ATF cannot perform
--- runner.Step ("Mobile 2 sends secure RPC in NON protected mode",  common.protectedModeRPC, { 2, addCommandParams[2] })
 
 runner.Step ("Start RPC Service protected for App 2", common.startServiceProtected, { 7, 2 })
 runner.Step ("Mobile 2 sends secure RPC in protected mode",  common.protectedModeRPC, { 2, addCommandParams[2] })
