@@ -1,44 +1,46 @@
 ---------------------------------------------------------------------------------------------------
 -- Proposal:
 -- https://github.com/smartdevicelink/sdl_evolution/blob/master/proposals/0204-same-app-from-multiple-devices.md
---   Description:
+-- Description:
 -- Two mobile applications with the same appNames and different appIds from different mobiles send
 -- UnsubscribeVehicleData requests and receive OnVehicleData notifications.
---   Precondition:
+--
+-- Preconditions:
 -- 1) SDL and HMI are started
 -- 2) Mobiles №1 and №2 are connected to SDL
 -- 3) Mobile №1 App1 subscribed on VehicleData("gps")
 -- 4) Mobile №1 App1 subscribed on VehicleData("gps", "speed")
---   Steps:
+--
+-- Steps:
 -- 1) Mobile №2 App2 requested Unsubscribe from VehicleData("gps")
---   Check SDL:
---     send VeicleInfo.UnsubscribeVehicleData (appId_2, "gps" = true) to HMI
---     sends UnsubscribeVehicleData("SUCCESS") response to Mobile №2
---     sends OnHashChange with updated hashId to Mobile №2
+--   Check:
+--    SDL send VeicleInfo.UnsubscribeVehicleData (appId_2, "gps" = true) to HMI
+--    SDL sends UnsubscribeVehicleData("SUCCESS") response to Mobile №2
+--    SDL sends OnHashChange with updated hashId to Mobile №2
 -- 2) HMI sent OnVehicleData("speed", "gps") notification
---   Check SDL:
---     sends OnVehicleData("gps") notification to Mobile №1
---     sends OnVehicleData("speed") notification to Mobile №2
--- 3) Mobile №1 App1 requested Unsubscribe from VehicleData("gps")
---   Check SDL:
---     sends VeicleInfo.UnsubscribeVehicleData (appId_1, "gps" = true) to HMI
---     receives VeicleInfo.UnsubscribeVehicleData("SUCCESS") response from HMI
---     sends UnsubscribeVehicleData("SUCCESS") response to Mobile №1
---     sends OnHashChange with updated hashId to Mobile №1
+--   Check:
+--    SDL sends OnVehicleData("gps") notification to Mobile №1
+--    SDL sends OnVehicleData("speed") notification to Mobile №2
+-- 3) Mobile №1 App1 requested unsubscribe from VehicleData("gps")
+--   Check:
+--    SDL sends VeicleInfo.UnsubscribeVehicleData (appId_1, "gps" = true) to HMI
+--    SDL receives VeicleInfo.UnsubscribeVehicleData("SUCCESS") response from HMI
+--    SDL sends UnsubscribeVehicleData("SUCCESS") response to Mobile №1
+--    SDL sends OnHashChange with updated hashId to Mobile №1
 -- 4) HMI sent OnVehicleData("speed", "gps") notification
---   Check SDL:
---     does NOT send OnVehicleData to Mobile №1
---     sends OnVehicleData("speed") notification to Mobile №2
--- 5) Mobile №2 App2 requested Unsubscribe from VehicleData("speed")
---   Check SDL:
---     sends VeicleInfo.UnsubscribeVehicleData (appId_2, "speed" = true) to HMI
---     receives VeicleInfo.UnsubscribeVehicleData("SUCCESS") response from HMI
---     sends UnsubscribeVehicleData("SUCCESS") response to Mobile №2
---     sends OnHashChange with updated hashId to Mobile №2
+--   Check:
+--    SDL does NOT send OnVehicleData to Mobile №1
+--    SDL sends OnVehicleData("speed") notification to Mobile №2
+-- 5) Mobile №2 App2 requested unsubscribe from VehicleData("speed")
+--   Check:
+--    SDL sends VeicleInfo.UnsubscribeVehicleData (appId_2, "speed" = true) to HMI
+--    SDL receives VeicleInfo.UnsubscribeVehicleData("SUCCESS") response from HMI
+--    SDL sends UnsubscribeVehicleData("SUCCESS") response to Mobile №2
+--    SDL sends OnHashChange with updated hashId to Mobile №2
 -- 6) HMI sent OnVehicleData("speed", "gps") notification
---   Check SDL:
---     does NOT send OnVehicleData to Mobile №1
---     does NOT send OnVehicleData to Mobile №2
+--   Check:
+--    SDL does NOT send OnVehicleData to Mobile №1
+--    SDL does NOT send OnVehicleData to Mobile №2
 ---------------------------------------------------------------------------------------------------
 --[[ Required Shared libraries ]]
 local runner = require('user_modules/script_runner')
@@ -58,10 +60,20 @@ local appParams = {
   [2] = { appName = "Test Application 2", appID = "00022", fullAppID = "00000022" }
 }
 
+local locationGroup = {
+  rpcs = {
+    GetVehicleData         = { hmi_levels = {"BACKGROUND", "FULL", "LIMITED"} },
+    OnVehicleData          = { hmi_levels = {"BACKGROUND", "FULL", "LIMITED"} },
+    SubscribeVehicleData   = { hmi_levels = {"BACKGROUND", "FULL", "LIMITED"} },
+    UnsubscribeVehicleData = { hmi_levels = {"BACKGROUND", "FULL", "LIMITED"} }
+  }
+}
+
 --[[ Local Functions ]]
-local function modifyWayPointGroupInPT(pt)
+local function modifyLocationGroupInPT(pt)
   pt.policy_table.functional_groupings["DataConsent-2"].rpcs = common.json.null
 
+  pt.policy_table.functional_groupings["Location-1"] = locationGroup
   pt.policy_table.app_policies[appParams[1].fullAppID] = common.cloneTable(pt.policy_table.app_policies["default"])
   pt.policy_table.app_policies[appParams[1].fullAppID].groups = {"Base-4", "Location-1"}
   pt.policy_table.app_policies[appParams[2].fullAppID] = common.cloneTable(pt.policy_table.app_policies["default"])
@@ -139,7 +151,7 @@ end
 --[[ Scenario ]]
 runner.Title("Preconditions")
 runner.Step("Clean environment", common.preconditions)
-runner.Step("Prepare preloaded PT", common.modifyPreloadedPt, {modifyWayPointGroupInPT})
+runner.Step("Prepare preloaded PT", common.modifyPreloadedPt, {modifyLocationGroupInPT})
 runner.Step("Start SDL and HMI", common.start)
 runner.Step("Connect two mobile devices to SDL", common.connectMobDevices, {devices})
 runner.Step("Register App1 from device 1", common.registerAppEx, { 1, appParams[1], 1 })

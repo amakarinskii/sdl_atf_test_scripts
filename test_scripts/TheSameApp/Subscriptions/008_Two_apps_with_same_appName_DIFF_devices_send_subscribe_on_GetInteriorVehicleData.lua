@@ -1,43 +1,46 @@
 ---------------------------------------------------------------------------------------------------
 -- Proposal:
 -- https://github.com/smartdevicelink/sdl_evolution/blob/master/proposals/0204-same-app-from-multiple-devices.md
--- Description: Two mobile applications with the same appNames and different appIds from different mobiles send
+-- Description:
+-- Two mobile applications with the same appNames and different appIds from different mobiles send
 -- GetInteriorVehicleData(RADIO module) requests and receive OnInteriorVehicleData(RADIO) notifications.
---   Precondition:
+--
+-- Preconditions:
 -- 1) SDL and HMI are started
 -- 2) Mobiles №1 and №2 are connected to SDL
---   Steps:
+--
+-- Steps:
 -- 1) Mobile №1 App1 requested Subscribe on GetInteriorVehicleData("RADIO" module)
---   Check SDL:
---     send RC.GetInteriorVehicleData (appId_1, "RADIO" module,  subscribe = true) to HMI
---     receives RC.GetInteriorVehicleData("SUCCESS") response from HMI
---     sends GetInteriorVehicleData("SUCCESS") response to Mobile №1
+--   Check:
+--    SDL send RC.GetInteriorVehicleData (appId_1, "RADIO" module,  subscribe = true) to HMI
+--    SDL receives RC.GetInteriorVehicleData("SUCCESS") response from HMI
+--    SDL sends GetInteriorVehicleData("SUCCESS") response to Mobile №1
 -- 2) HMI sent RC.OnInteriorVehicleData("RADIO") notification
---   Check SDL:
---     sends OnInteriorVehicleData("RADIO") notification to Mobile №1
---     does NOT send OnInteriorVehicleData notification to Mobile №2
+--   Check:
+--    SDL sends OnInteriorVehicleData("RADIO") notification to Mobile №1
+--    SDL does NOT send OnInteriorVehicleData notification to Mobile №2
 -- 3) Mobile №2 App2 requested Subscribe on GetInteriorVehicleData("CLIMATE" module)
---   Check SDL:
---     sends RC.GetInteriorVehicleData(appId_2, "CLIMATE" module, subscribe = true) to HMI
---     receives RC.GetInteriorVehicleData("SUCCESS") response from HMI
---     sends GetInteriorVehicleData("SUCCESS") response to Mobile №2
+--   Check:
+--    SDL sends RC.GetInteriorVehicleData(appId_2, "CLIMATE" module, subscribe = true) to HMI
+--    SDL receives RC.GetInteriorVehicleData("SUCCESS") response from HMI
+--    SDL sends GetInteriorVehicleData("SUCCESS") response to Mobile №2
 -- 4) HMI sent RC.OnInteriorVehicleData("CLIMATE") notification
---   Check SDL:
---     sends OnInteriorVehicleData("CLIMATE") notification to Mobile №2
---     does NOT send OnInteriorVehicleData notification to Mobile №1
+--   Check:
+--    SDL sends OnInteriorVehicleData("CLIMATE") notification to Mobile №2
+--    SDL does NOT send OnInteriorVehicleData notification to Mobile №1
 -- 5) Mobile №1 App1 requested Subscribe on GetInteriorVehicleData("CLIMATE" module)
---   Check SDL:
---     sends GetInteriorVehicleData("SUCCESS") response Mobile №1
+--   Check:
+--    SDL sends GetInteriorVehicleData("SUCCESS") response Mobile №1
 -- 6) HMI sent RC.OnInteriorVehicleData("CLIMATE") notification
---   Check SDL:
---     sends OnInteriorVehicleData("CLIMATE") notification to Mobile №2
---     does NOT send OnInteriorVehicleData notifications to Mobile №1 and №2
+--   Check:
+--    SDL sends OnInteriorVehicleData("CLIMATE") notification to Mobile №2
+--    SDL does NOT send OnInteriorVehicleData notifications to Mobile №1 and №2
 -- 7) Mobile №2 App2 requested Subscribe on GetInteriorVehicleData("RADIO" module)
---   Check SDL:
---     sends GetInteriorVehicleData("SUCCESS") response to Mobile №2
+--   Check:
+--    SDL sends GetInteriorVehicleData("SUCCESS") response to Mobile №2
 -- 8) HMI sent RC.OnInteriorVehicleData("RADIO") notification
---   Check SDL:
---     sends OnInteriorVehicleData("RADIO") notifications to Mobile №1 and №2
+--   Check:
+--    SDL sends OnInteriorVehicleData("RADIO") notifications to Mobile №1 and №2
 ---------------------------------------------------------------------------------------------------
 --[[ Required Shared libraries ]]
 local runner = require('user_modules/script_runner')

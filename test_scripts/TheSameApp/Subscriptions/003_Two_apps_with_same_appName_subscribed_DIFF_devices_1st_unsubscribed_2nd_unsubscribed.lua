@@ -1,33 +1,38 @@
 ---------------------------------------------------------------------------------------------------
 -- Proposal:
 -- https://github.com/smartdevicelink/sdl_evolution/blob/master/proposals/0204-same-app-from-multiple-devices.md
--- Description: Two mobile applications with the same appNames from different mobiles do subscribing on the same button
+-- Description:
+-- Two mobile applications with the same appNames from different mobiles do subscribing on the same button
 -- and receive OnButtonEvent and OnButtonPress notifications.
---   Precondition:
+--
+-- Preconditions:
 -- 1) SDL and HMI are started
 -- 2) Mobiles №1 and №2 are connected to SDL
 -- 3) Mobiles №1 and №2 are subscribed on "OK" button already
---   Steps:
+--
+-- Steps:
 -- 1) HMI sent OnButtonEvent and OnButtonPress notifications for "OK" button
---   Check SDL:
---     sends OnButtonEvent("OK") and OnButtonPress("OK") notifications to Mobile №1 and to Mobile №2
+--   Check:
+--    SDL sends OnButtonEvent("OK") and OnButtonPress("OK") notifications to Mobile №1 and to Mobile №2
 -- 2) Mobile №1 App1 requested Unsubscribe from "OK" button
---     sends Buttons.UnsubscribeButton( "OK", appId_1 ) to HMI
---     receives Buttons.UnsubscribeButton("SUCCESS") response from HMI
---     sends UnsubscribeButton("SUCCESS") response to Mobile №1
---     sends OnHashChange with updated hashId to Mobile №1
+--   Check:
+--    SDL sends Buttons.UnsubscribeButton( "OK", appId_1 ) to HMI
+--    SDL receives Buttons.UnsubscribeButton("SUCCESS") response from HMI
+--    SDL sends UnsubscribeButton("SUCCESS") response to Mobile №1
+--    SDL sends OnHashChange with updated hashId to Mobile №1
 -- 3) HMI sent OnButtonEvent and OnButtonPress notifications for "OK" button
---   Check SDL:
---     sends OnButtonEvent("OK") and OnButtonPress("OK") notifications to Mobile №2
---     does NOT send these notifications to Mobile №1
+--   Check:
+--    SDL sends OnButtonEvent("OK") and OnButtonPress("OK") notifications to Mobile №2
+--    SDL does NOT send these notifications to Mobile №1
 -- 4) Mobile №2 App2 requested Unsubscribe from "OK" button
----    sends Buttons.UnsubscribeButton( "OK", appId_2 ) to HMI
---     receives Buttons.UnsubscribeButton("SUCCESS") response from HMI
---     sends UnsubscribeButton("SUCCESS") response to Mobile №2
---     sends OnHashChange with updated hashId to Mobile №2
+--   Check:
+--    SDL sends Buttons.UnsubscribeButton( "OK", appId_2 ) to HMI
+--    SDL receives Buttons.UnsubscribeButton("SUCCESS") response from HMI
+--    SDL sends UnsubscribeButton("SUCCESS") response to Mobile №2
+--    SDL sends OnHashChange with updated hashId to Mobile №2
 -- 5) HMI sent OnButtonEvent and OnButtonPress notifications for "OK" button
---   Check SDL:
---     does NOT send these notifications to Mobile №1 and to Mobile №2
+--   Check:
+--    SDL does NOT send these notifications to Mobile №1 and to Mobile №2
 ---------------------------------------------------------------------------------------------------
 --[[ Required Shared libraries ]]
 local runner = require('user_modules/script_runner')

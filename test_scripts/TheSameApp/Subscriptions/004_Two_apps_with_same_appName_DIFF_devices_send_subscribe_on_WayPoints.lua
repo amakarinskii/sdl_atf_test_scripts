@@ -1,30 +1,33 @@
 ---------------------------------------------------------------------------------------------------
 -- Proposal:
 -- https://github.com/smartdevicelink/sdl_evolution/blob/master/proposals/0204-same-app-from-multiple-devices.md
--- Description: Two mobile applications with the same appNames and different appIds from different mobiles send
+-- Description:
+-- Two mobile applications with the same appNames and different appIds from different mobiles send
 -- SubscribeWayPoints requests and receive OnWayPointChange notifications.
---   Precondition:
+--
+-- Preconditions:
 -- 1) SDL and HMI are started
 -- 2) Mobiles №1 and №2 are connected to SDL
---   Steps:
+--
+-- Steps:
 -- 1) Mobile №1 App1 requested Subscribe on WayPoints
---   Check SDL:
---     sends Navigation.SubscribeWayPoints(appId_1) to HMI
---     receives Navigation.SubscribeWayPoints("SUCCESS") response from HMI
---     sends SubscribeWayPoints("SUCCESS") response to Mobile №1
---     sends OnHashChange with updated hashId to Mobile №1
+--   Check:
+--    SDL sends Navigation.SubscribeWayPoints(appId_1) to HMI
+--    SDL receives Navigation.SubscribeWayPoints("SUCCESS") response from HMI
+--    SDL sends SubscribeWayPoints("SUCCESS") response to Mobile №1
+--    SDL sends OnHashChange with updated hashId to Mobile №1
 -- 2) HMI sent OnWayPointChange notification
---   Check SDL:
---     sends OnWayPointChange notification to Mobile №1
---     does NOT send OnWayPointChange to Mobile №2
+--   Check:
+--    SDL sends OnWayPointChange notification to Mobile №1
+--    SDL does NOT send OnWayPointChange to Mobile №2
 -- 3) Mobile №2 App2 requested Subscribe on WayPoints
---   Check SDL:
---     sends Navigation.SubscribeWayPoints(appId_1) to HMI
---     sends SubscribeWayPoints("SUCCESS") response to Mobile №2
---     sends OnHashChange with updated hashId to Mobile №2
+--   Check:
+--    SDL sends Navigation.SubscribeWayPoints(appId_1) to HMI
+--    SDL sends SubscribeWayPoints("SUCCESS") response to Mobile №2
+--    SDL sends OnHashChange with updated hashId to Mobile №2
 -- 4) HMI sent OnWayPointChange notification
---   Check SDL:
---     sends OnWayPointChange notification to Mobile №1 and to Mobile №2
+--   Check:
+--    SDL sends OnWayPointChange notification to Mobile №1 and to Mobile №2
 ---------------------------------------------------------------------------------------------------
 --[[ Required Shared libraries ]]
 local runner = require('user_modules/script_runner')
