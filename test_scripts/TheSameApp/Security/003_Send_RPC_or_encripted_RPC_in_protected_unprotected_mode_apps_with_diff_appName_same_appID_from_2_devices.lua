@@ -1,42 +1,40 @@
 ---------------------------------------------------------------------------------------------------
 -- Proposal:
 -- https://github.com/smartdevicelink/sdl_evolution/blob/master/proposals/0204-same-app-from-multiple-devices.md
--- Description: Send encrypted or unencrypted RPCs in protected and unprotected mode from apps registered on different
+-- Description:
+-- Send encrypted or unencrypted RPCs in protected and unprotected mode from apps registered on different
 -- mobile devices and having same appNames and different appIds
---   Precondition:
+--
+-- Preconditions:
 -- 1) SDL has up-to-date certificates in Policy Table
 -- 2) App_1 is registered from Mobile №1 and RPC service is started in unprotected mode
 -- 3) App_2 is registered from Mobile №2 and RPC service is started in unprotected mode
---   Steps:
+--
+-- Steps:
 -- 1) App_1 switches RPC service to protected mode:
---   Check SDL:
---    started protected mode successfully for App1.
+--   Check:
+--    SDL started protected mode successfully for App1.
 -- 2) Mobile №1 sends AddCommand RPC in protected mode to SDL
---   Check SDL:
---    responds with  AddCommand secure response (protected) to Mobile №1
+--   Check:
+--    SDL responds with  AddCommand secure response (protected) to Mobile №1
 -- 3) Mobile №1 sends AddCommand RPC in unprotected mode to SDL
---   Check SDL:
---    responds with  AddCommand secure response (protected) to Mobile №1
+--   Check:
+--    SDL responds with  AddCommand secure response (protected) to Mobile №1
 -- 4) Mobile №2 sends AddCommand RPC in unprotected mode to SDL
---   Check SDL:
---    responds with AddCommand response (unprotected) to Mobile №2
-
--- 5) Mobile №2 sends AddCommand RPC in protected mode to SDL
---   Check SDL:
---    does NOT respond with AddCommand response (unprotected) to Mobile №2
-
--- 6) App_2 switches RPC service to protected mode:
---   Check SDL:
---    started protected mode successfully for App2.
--- 7) Mobile №2 sends AddCommand RPC in protected mode to SDL
---   Check SDL:
---    responds with  AddCommand secure response (protected) to Mobile №2
--- 8) Mobile №2 sends AddCommand RPC in unprotected mode to SDL
---   Check SDL:
---    responds with  AddCommand secure response (protected) to Mobile №2
--- 9) Mobile №1 sends AddCommand RPC in protected mode to SDL
---   Check SDL:
---    responds with  AddCommand secure response (protected) to Mobile №1
+--   Check:
+--    SDL responds with AddCommand response (unprotected) to Mobile №2
+-- 5) App_2 switches RPC service to protected mode:
+--   Check:
+--    SDL started protected mode successfully for App2.
+-- 6) Mobile №2 sends AddCommand RPC in protected mode to SDL
+--   Check:
+--    SDL responds with  AddCommand secure response (protected) to Mobile №2
+-- 7) Mobile №2 sends AddCommand RPC in unprotected mode to SDL
+--   Check:
+--    SDL responds with  AddCommand secure response (protected) to Mobile №2
+-- 8) Mobile №1 sends AddCommand RPC in protected mode to SDL
+--   Check:
+--    SDL responds with  AddCommand secure response (protected) to Mobile №1
 ---------------------------------------------------------------------------------------------------
 
 --[[ Required Shared libraries ]]
