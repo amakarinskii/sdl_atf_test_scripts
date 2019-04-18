@@ -1,24 +1,27 @@
 ---------------------------------------------------------------------------------------------------
 -- Proposal:
 -- https://github.com/smartdevicelink/sdl_evolution/blob/master/proposals/0204-same-app-from-multiple-devices.md
--- Description: Registration of two mobile applications from different devices having different appIDs and same
+-- Description:
+-- Registration of two mobile applications from different devices having different appIDs and same
 -- appNames.
 -- App_1 uses name from its "nickname" field,
 -- App_2 has the same "nickname" as App_1 has.
---   Precondition:
--- 1) PT contains entity ( appID = 1, nicknames = "Test Application" )
--- 2) PT contains entity ( appID = 2, nicknames = "Test Application" )
+--
+--  Preconditions:
+-- 1) PT contains entity ( appID = 0000001,  nicknames = "Test Application" )
+-- 2) PT contains entity ( appID = 00000022, nicknames = "Test Application" )
 -- 3) SDL and HMI are started
 -- 4) Mobile №1 and №2 are connected to SDL
---   Steps:
+--
+-- Steps:
 -- 1) Mobile №1 sends RegisterAppInterface request (appID = 1, appName = "Test Application") to SDL
---   CheckSDL:
---     SDL sends RegisterAppInterface response( resultCode = SUCCESS  ) to Mobile №1
---     BasicCommunication.OnAppRegistered(...) notification to HMI
+--   Check:
+--    SDL sends RegisterAppInterface response( resultCode = SUCCESS  ) to Mobile №1
+--    SDL sends BasicCommunication.OnAppRegistered(...) notification to HMI
 -- 2) Mobile №2 sends RegisterAppInterface request (appID = 2, appName = "Test Application") to SDL
---   CheckSDL:
---     SDL sends RegisterAppInterface response( resultCode = SUCCESS  ) to Mobile №2
---     BasicCommunication.OnAppRegistered(...) notification to HMI
+--   Check:
+--    SDL sends RegisterAppInterface response( resultCode = SUCCESS  ) to Mobile №2
+--    SDL sends BasicCommunication.OnAppRegistered(...) notification to HMI
 ---------------------------------------------------------------------------------------------------
 --[[ Required Shared libraries ]]
 local runner = require('user_modules/script_runner')

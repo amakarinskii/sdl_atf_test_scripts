@@ -196,7 +196,9 @@ end
 function common.changeRegistrationNegative(pAppId, pParams, pResultCode)
   local cid = common.mobile.getSession(pAppId):SendRPC("ChangeRegistration", pParams)
   common.mobile.getSession(pAppId):ExpectResponse(cid, { success = false, resultCode = pResultCode })
-  common.hmi.getConnection():ExpectNotification("BasicCommunication.OnAppRegistered"):Times(0)
+  common.hmi.getConnection():ExpectRequest("VR.ChangeRegistration"):Times(0)
+  common.hmi.getConnection():ExpectRequest("TTS.ChangeRegistration"):Times(0)
+  common.hmi.getConnection():ExpectRequest("UI.ChangeRegistration"):Times(0)
 end
 
 function common.mobile.disallowSDL(pMobConnId)

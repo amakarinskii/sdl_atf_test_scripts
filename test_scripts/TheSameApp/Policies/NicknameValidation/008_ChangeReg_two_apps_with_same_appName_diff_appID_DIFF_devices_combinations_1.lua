@@ -5,19 +5,21 @@
 -- matched appNames.
 -- App_1 re-registers using name from its "nickname" field,
 -- App_2 re-registers using name from its "nickname" field.
---   Precondition:
--- 1) PT contains entity ( appID = 1, nicknames = "Test Application", "Test Application 2" )
--- 1) PT contains entity ( appID = 2, nicknames = "Test Application", "Test Application 2", "Test Application 3" )
+--
+-- Preconditions:
+-- 1) PT contains entity ( appID = 0000001,  nicknames = "Test Application", "Test Application 2" )
+-- 1) PT contains entity ( appID = 00000022, nicknames = "Test Application", "Test Application 2", "Test Application 3")
 -- 2) SDL and HMI are started
--- 3) Mobile №1 is registered with ( appID = 1, appName = "Test Application 2" )
--- 4) Mobile №2 is registered with ( appID = 2, appName = "Test Application 2" )
---   Steps:
--- 1) Mobile №1 sends ChangeRegistration RPC request (appName = "Test Application") to SDL
---   CheckSDL:
---     SDL sends ChangeRegistration response( resultCode = SUCCESS ) to Mobile №1
+-- 3) Mobile №1 is registered with ( appID = 0000001,  appName = "Test Application 2" )
+-- 4) Mobile №2 is registered with ( appID = 00000022, appName = "Test Application 2" )
+--
+-- Steps:
+-- 1) Mobile №2 sends ChangeRegistration RPC request (appName = "Test Application") to SDL
+--   Check:
+--    SDL sends ChangeRegistration response( resultCode = SUCCESS ) to Mobile №1
 -- 2) Mobile №2 sends ChangeRegistration request appName = "Test Application 3") to SDL
---   CheckSDL:
---     SDL sends ChangeRegistration response( resultCode = SUCCESS ) to Mobile №2
+--   Check:
+--    SDL sends ChangeRegistration response( resultCode = SUCCESS ) to Mobile №2
 ---------------------------------------------------------------------------------------------------
 --[[ Required Shared libraries ]]
 local runner = require('user_modules/script_runner')
@@ -71,7 +73,7 @@ runner.Step("Register App1 from device 2", common.registerAppEx, {1, appParams[1
 runner.Step("Register App2 from device 2", common.registerAppEx, {2, appParams[2], 2})
 
 runner.Title("Test")
-runner.Step("Change registration of App1 from device 1", common.changeRegistrationPositive, {1, changeRegParams[1]})
+runner.Step("Change registration of App2 from device 2", common.changeRegistrationPositive, {2, changeRegParams[1]})
 runner.Step("Change registration of App2 from device 2", common.changeRegistrationPositive, {2, changeRegParams[2]})
 
 runner.Title("Postconditions")

@@ -4,18 +4,20 @@
 -- Description: Registration of two mobile applications from different devices having matched appIDs and appNames.
 -- App_1 re-registers using name from its "nickname" field,
 -- App_2 re-registers using name wich is NOT contained in its "nickname" field.
---   Precondition:
+--
+-- Preconditions:
 -- 1) PT contains entity ( appID = 1, nicknames = "Test Application", "Test Application 2" )
 -- 2) SDL and HMI are started
--- 3) Mobile №1 is registered with ( appID = 1, appName = "Test Application" )
--- 4) Mobile №2 is registered with ( appID = 1, appName = "Test Application" )
---   Steps:
+-- 3) Mobile №1 is registered with ( appID = 0000001, appName = "Test Application" )
+-- 4) Mobile №2 is registered with ( appID = 0000001, appName = "Test Application" )
+--
+-- Steps:
 -- 1) Mobile №1 sends ChangeRegistration RPC request (appName = "Test Application 2") to SDL
---   CheckSDL:
---     SDL sends ChangeRegistration response( resultCode = SUCCESS  ) to Mobile №1
+--   Check:
+--    SDL sends ChangeRegistration response( resultCode = SUCCESS  ) to Mobile №1
 -- 2) Mobile №2 sends ChangeRegistration request appName = "Test Application 3") to SDL
---   CheckSDL:
---     SDL sends ChangeRegistration response( resultCode = DISALLOWED  ) to Mobile №2
+--   Check:
+--    SDL sends ChangeRegistration response( resultCode = DISALLOWED  ) to Mobile №2
 ---------------------------------------------------------------------------------------------------
 --[[ Required Shared libraries ]]
 local runner = require('user_modules/script_runner')

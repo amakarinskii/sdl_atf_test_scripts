@@ -4,19 +4,21 @@
 -- Description: Registration of two mobile applications from different devices having different appIDs and appNames.
 -- App_1 re-registers using name from its "nickname" field,
 -- App_2 re-registers using name wich is NOT contained in its "nickname" field.
+--
 --   Precondition:
--- 1) PT contains entity ( appID = 1, nicknames = "Test Application",   "Test Application 2" )
--- 1) PT contains entity ( appID = 2, nicknames = "Test Application 2", "Test Application 3" )
+-- 1) PT contains entity ( appID = 0000001,  nicknames = "Test Application",   "Test Application 2" )
+-- 1) PT contains entity ( appID = 00000022, nicknames = "Test Application 2", "Test Application 3" )
 -- 2) SDL and HMI are started
--- 3) Mobile №1 is registered with ( appID = 1, appName = "Test Application 2" )
--- 4) Mobile №2 is registered with ( appID = 2, appName = "Test Application" )
+-- 3) Mobile №1 is registered with ( appID = 0000001,  appName = "Test Application" )
+-- 4) Mobile №2 is registered with ( appID = 00000022, appName = "Test Application 3" )
+--
 --   Steps:
--- 1) Mobile №1 sends ChangeRegistration RPC request (appName = "Test Application") to SDL
+-- 1) Mobile №2 sends ChangeRegistration RPC request (appName = "Test Application 2") to SDL
 --   CheckSDL:
---     SDL sends ChangeRegistration response( resultCode = SUCCESS ) to Mobile №1
+--    SDL sends ChangeRegistration response( resultCode = SUCCESS ) to Mobile №1
 -- 2) Mobile №2 sends ChangeRegistration request appName = "Test Application 3") to SDL
 --   CheckSDL:
---     SDL sends ChangeRegistration response( resultCode = DISALLOWED ) to Mobile №2
+--    SDL sends ChangeRegistration response( resultCode = DISALLOWED ) to Mobile №2
 ---------------------------------------------------------------------------------------------------
 --[[ Required Shared libraries ]]
 local runner = require('user_modules/script_runner')
@@ -35,7 +37,7 @@ local devices = {
 
 local appParams = {
 	[1] = { appName = "Test Application",   appID = "0001",  fullAppID = "0000001" },
-	[2] = { appName = "Test Application 2", appID = "00022", fullAppID = "00000022" }
+	[2] = { appName = "Test Application 3", appID = "00022", fullAppID = "00000022" }
 }
 
 local changeRegParams = {
@@ -70,9 +72,10 @@ runner.Step("Register App1 from device 2", common.registerAppEx, {1, appParams[1
 runner.Step("Register App2 from device 2", common.registerAppEx, {2, appParams[2], 2})
 
 runner.Title("Test")
-runner.Step("Change registration of App1 from device 1", common.changeRegistrationPositive, {1, changeRegParams[1]})
-runner.Step("Change registration App2 from device 2",   common.changeRegistrationNegative, {2, changeRegParams[2],
-                                                                                                "DISALLOWED"})
+runner.Step("Change registration of App2 from device 2, appName is in list",
+  common.changeRegistrationPositive, { 2, changeRegParams[1] })
+runner.Step("Change registration of App2 from device 2, appName is NOT in list _DISALLOWED",
+  common.changeRegistrationNegative, { 2, changeRegParams[2], "DISALLOWED" })
 
 runner.Title("Postconditions")
 runner.Step("Remove mobile devices", common.clearMobDevices, {devices})

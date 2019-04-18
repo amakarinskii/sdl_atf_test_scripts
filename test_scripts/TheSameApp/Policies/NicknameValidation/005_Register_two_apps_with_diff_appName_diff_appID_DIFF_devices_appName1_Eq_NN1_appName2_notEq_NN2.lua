@@ -4,20 +4,22 @@
 -- Description: Registration of two mobile applications from different devices having different appIDs and appNames.
 -- App_1 uses name from its "nickname" field,
 -- App_2 trying to register using name wich is NOT contained in its "nickname" field.
---   Precondition:
--- 1) PT contains entity ( appID = 1, nicknames = "Test Application" )
--- 2) PT contains entity ( appID = 2, nicknames = "Test Application 2" )
+--
+-- Preconditions:
+-- 1) PT contains entity ( appID = 0000001,  nicknames = "Test Application" )
+-- 2) PT contains entity ( appID = 00000022, nicknames = "Test Application 2" )
 -- 3) SDL and HMI are started
 -- 4) Mobile №1 and №2 are connected to SDL
---   Steps:
--- 1) Mobile №1 sends RegisterAppInterface request (appID = 1, appName = "Test Application") to SDL
---   CheckSDL:
---     SDL sends RegisterAppInterface response( resultCode = SUCCESS  ) to Mobile №1
---     BasicCommunication.OnAppRegistered(...) notification to HMI
--- 2) Mobile №2 sends RegisterAppInterface request (appID = 2, appName = "Test Application 2") to SDL
---   CheckSDL:
---     SDL sends RegisterAppInterface response( resultCode = DISALLOWED  ) to Mobile №2
---     NOT send OnAppRegistered(...) notification to HMI
+--
+-- Steps:
+-- 1) Mobile №1 sends RegisterAppInterface request (appID = 0000001, appName = "Test Application") to SDL
+--   Check:
+--    SDL sends RegisterAppInterface response( resultCode = SUCCESS  ) to Mobile №1
+--    SDL sends BasicCommunication.OnAppRegistered(...) notification to HMI
+-- 2) Mobile №2 sends RegisterAppInterface request (appID = 00000022, appName = "Test Application 2") to SDL
+--   Check:
+--    SDL sends RegisterAppInterface response( resultCode = DISALLOWED  ) to Mobile №2
+--    SDL does NOT send OnAppRegistered(...) notification to HMI
 ---------------------------------------------------------------------------------------------------
 --[[ Required Shared libraries ]]
 local runner = require('user_modules/script_runner')
