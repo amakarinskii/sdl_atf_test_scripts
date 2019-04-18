@@ -2,36 +2,47 @@
 -- Proposal:
 -- https://github.com/smartdevicelink/sdl_evolution/blob/master/proposals/0204-same-app-from-multiple-devices.md
 -- Description: Consent of two different mobile devices with registered the same mobile applications
--- Precondition:
--- 1)SDL and HMI are started
--- 2)Mobile №1 and №2 are connected to SDL but are not consented
--- 3)Application App1 is registered on Mobile №1 and Mobile №2 (two copies of one application)
--- In case:
--- 1)App1 from Mobile №1 sends valid GetSystemCapability request to SDL
---   App1 from Mobile №2 sends valid GetSystemCapability request to SDL
--- 2)Mobile №1 is consented by user from HMI GUI (SDL.OnAllowSDLFunctionality)
---   App1 from Mobile №1 sends valid GetSystemCapability request to SDL
---   App1 from Mobile №2 sends valid GetSystemCapability request to SDL
--- 3)Mobile №2 is consented by user from HMI GUI (SDL.OnAllowSDLFunctionality)
---   App1 from Mobile №1 sends valid GetSystemCapability request to SDL
---   App1 from Mobile №2 sends valid GetSystemCapability request to SDL
--- 4)Mobile №1 is declined by user from HMI GUI (SDL.OnAllowSDLFunctionality)
---   App1 from Mobile №1 sends valid GetSystemCapability request to SDL
---   App1 from Mobile №2 sends valid GetSystemCapability request to SDL
--- 5)Mobile №2 is declined by user from HMI GUI (SDL.OnAllowSDLFunctionality)
---   App1 from Mobile №1 sends valid GetSystemCapability request to SDL
---   App1 from Mobile №2 sends valid GetSystemCapability request to SDL
--- SDL does:
--- 1)Send GetSystemCapability(resultCode = DISALLOWED) response to Mobile №1
---   Send GetSystemCapability(resultCode = DISALLOWED) response to Mobile №2
--- 2)Send GetSystemCapability(resultCode = SUCCESS) response to Mobile №1
---   Send GetSystemCapability(resultCode = DISALLOWED) response to Mobile №2
--- 3)Send GetSystemCapability(resultCode = SUCCESS) response to Mobile №1
---   Send GetSystemCapability(resultCode = SUCCESS) response to Mobile №2
--- 4)Send GetSystemCapability(resultCode = DISALLOWED) response to Mobile №1
---   Send GetSystemCapability(resultCode = SUCCESS) response to Mobile №2
--- 5)Send GetSystemCapability(resultCode = DISALLOWED) response to Mobile №1
---   Send GetSystemCapability(resultCode = DISALLOWED) response to Mobile №2
+--
+-- Preconditions:
+-- 1) SDL and HMI are started
+-- 2) Mobile №1 and №2 are connected to SDL but are not consented
+-- 3) Application App1 is registered on Mobile №1 and Mobile №2 (two copies of one application)
+--
+-- Steps:
+-- 1) App1 from Mobile №1 sends valid GetSystemCapability request to SDL
+--   Check:
+--    SDL sends GetSystemCapability(resultCode = DISALLOWED) response to Mobile №1
+-- 2) App1 from Mobile №2 sends valid GetSystemCapability request to SDL
+--   Check:
+--    SDL sends GetSystemCapability(resultCode = DISALLOWED) response to Mobile №2
+-- 3) Mobile №1 is consented by user from HMI GUI (SDL.OnAllowSDLFunctionality)
+-- App1 from Mobile №1 sends valid GetSystemCapability request to SDL
+--   Check:
+--    SDL sends GetSystemCapability(resultCode = SUCCESS) response to Mobile №1
+-- 4) App1 from Mobile №2 sends valid GetSystemCapability request to SDL
+--   Check:
+--    SDL sends GetSystemCapability(resultCode = DISALLOWED) response to Mobile №2
+-- 5) Mobile №2 is consented by user from HMI GUI (SDL.OnAllowSDLFunctionality)
+-- App1 from Mobile №1 sends valid GetSystemCapability request to SDL
+--   Check:
+--    SDL sends GetSystemCapability(resultCode = SUCCESS) response to Mobile №1
+-- 6) App1 from Mobile №2 sends valid GetSystemCapability request to SDL
+--   Check:
+--    SDL sends GetSystemCapability(resultCode = SUCCESS) response to Mobile №2
+-- 7) Mobile №1 is declined by user from HMI GUI (SDL.OnAllowSDLFunctionality)
+-- App1 from Mobile №1 sends valid GetSystemCapability request to SDL
+--   Check:
+--    SDL sends GetSystemCapability(resultCode = DISALLOWED) response to Mobile №1
+-- 8) App1 from Mobile №2 sends valid GetSystemCapability request to SDL
+--   Check:
+--    SDL sends GetSystemCapability(resultCode = SUCCESS) response to Mobile №2
+-- 9) Mobile №2 is declined by user from HMI GUI (SDL.OnAllowSDLFunctionality)
+-- App1 from Mobile №1 sends valid GetSystemCapability request to SDL
+--   Check:
+--    SDL sends GetSystemCapability(resultCode = DISALLOWED) response to Mobile №1
+-- 10) App1 from Mobile №2 sends valid GetSystemCapability request to SDL
+--   Check:
+--    SDL sends GetSystemCapability(resultCode = DISALLOWED) response to Mobile №2
 ---------------------------------------------------------------------------------------------------
 --[[ Required Shared libraries ]]
 local runner = require('user_modules/script_runner')

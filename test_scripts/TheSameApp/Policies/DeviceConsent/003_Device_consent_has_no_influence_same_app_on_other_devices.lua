@@ -2,20 +2,25 @@
 -- Proposal:
 -- https://github.com/smartdevicelink/sdl_evolution/blob/master/proposals/0204-same-app-from-multiple-devices.md
 -- Description: Consent of one mobile device has no influence on the same application registered on another device
--- Precondition:
--- 1)SDL and HMI are started
--- 2)Mobile №1 is connected to SDL and is consented
--- 3)Application App1 is registered on Mobile №1
--- In case:
--- 1)App1 from Mobile №1 sends valid GetSystemCapability request to SDL
--- 2)Mobile №2 connects to SDL but is not consented
---   Application App1 registers on Mobile №2
---   App1 from Mobile №1 sends valid GetSystemCapability request to SDL
---   App1 from Mobile №2 sends valid GetSystemCapability request to SDL
--- SDL does:
--- 1)Send GetSystemCapability(resultCode = SUCCESS) response to Mobile №1
--- 2)Send GetSystemCapability(resultCode = SUCCESS) response to Mobile №1
---   Send GetSystemCapability(resultCode = DISALLOWED) response to Mobile №2
+--
+-- Preconditions:
+-- 1) SDL and HMI are started
+-- 2) Mobile №1 is connected to SDL and is consented
+-- 3) Application App1 is registered on Mobile №1
+--
+-- Steps:
+-- 1) App1 from Mobile №1 sends valid GetSystemCapability request to SDL
+--   Check:
+--    SDL sends GetSystemCapability(resultCode = SUCCESS) response to Mobile №1
+-- 2) Mobile №2 connects to SDL but is not consented
+-- Application App1 registers on Mobile №2
+-- App1 from Mobile №1 sends valid GetSystemCapability request to SDL
+--   Check:
+--    SDL sends GetSystemCapability(resultCode = SUCCESS) response to Mobile №1
+--   Check:
+-- 3) App1 from Mobile №2 sends valid GetSystemCapability request to SDL
+--   Check:
+--    SDL sends GetSystemCapability(resultCode = DISALLOWED) response to Mobile №2
 ---------------------------------------------------------------------------------------------------
 --[[ Required Shared libraries ]]
 local runner = require('user_modules/script_runner')

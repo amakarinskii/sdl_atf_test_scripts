@@ -1,30 +1,38 @@
 ---------------------------------------------------------------------------------------------------
 -- Proposal:
 -- https://github.com/smartdevicelink/sdl_evolution/blob/master/proposals/0204-same-app-from-multiple-devices.md
--- Description: User consent for multiple functional groups of two consented mobile devices
---    with the same mobile applications registered
--- Precondition:
--- 1)SDL and HMI are started
--- 2)Mobile №1 and №2 are connected to SDL and are consented
--- 3)RPC SendLocation exists only in Group001 according policies and requires user consent ConsentGroup001
---   RPC Show exists only in Group002 according policies and requires user consent ConsentGroup001
--- 4)Application App1 is registered on Mobile №1 and Mobile №2 (two copies of one application)
--- In case:
--- 1)Application App1 from Mobile №1 sends to SDL valid SendLocation RPC request
---   Application App1 from Mobile №2 sends to SDL valid Show RPC request
--- 2)User allows ConsentGroup001 for App1 on Mobile №1
---   Application App1 from Mobile №1 sends to SDL valid SendLocation RPC request
---   Application App1 from Mobile №2 sends to SDL valid Show RPC request
--- 3)User allows ConsentGroup001 for App1 on Mobile №2 and disallows it for App1 on Mobile №1
---   Application App1 from Mobile №1 sends to SDL valid SendLocation RPC request
---   Application App1 from Mobile №2 sends to SDL valid Show RPC request
--- SDL does:
--- 1)Send SendLocation(resultCode = DISALLOWED) response to Mobile №1
---   Send Show(resultCode = DISALLOWED) response to Mobile №2
--- 2)Send SendLocation(resultCode = SUCCESS) response to Mobile №1
---   Send Show(resultCode = DISALLOWED) response to Mobile №2
--- 3)Send SendLocation(resultCode = USER_DISALLOWED) response to Mobile №1
---   Send Show(resultCode = SUCCESS) response to Mobile №2
+-- Description:
+-- User consent for multiple functional groups of two consented mobile devices with the same mobile applications
+-- registered
+--
+-- Preconditions:
+-- 1) SDL and HMI are started
+-- 2) Mobile №1 and №2 are connected to SDL and are consented
+-- 3) RPC SendLocation exists only in Group001 according policies and requires user consent ConsentGroup001
+--    RPC Show exists only in Group002 according policies and requires user consent ConsentGroup001
+-- 4) Application App1 is registered on Mobile №1 and Mobile №2 (two copies of one application)
+--
+-- Steps:
+-- 1) Application App1 from Mobile №1 sends to SDL valid SendLocation RPC request
+--   Check:
+--    SDl sends SendLocation(resultCode = DISALLOWED) response to Mobile №1
+-- 2) Application App1 from Mobile №2 sends to SDL valid Show RPC request
+--   Check:
+--    SDL sends Show(resultCode = DISALLOWED) response to Mobile №2
+-- 3) User allows ConsentGroup001 for App1 on Mobile №1
+-- Application App1 from Mobile №1 sends to SDL valid SendLocation RPC request
+--   Check:
+--    SDL sends SendLocation(resultCode = SUCCESS) response to Mobile №1
+-- 4) Application App1 from Mobile №2 sends to SDL valid Show RPC request
+--   Check:
+--    SDL sends Show(resultCode = DISALLOWED) response to Mobile №2
+-- 5) User allows ConsentGroup001 for App1 on Mobile №2 and disallows it for App1 on Mobile №1
+-- Application App1 from Mobile №1 sends to SDL valid SendLocation RPC request
+--    SDL sends SendLocation(resultCode = USER_DISALLOWED) response to Mobile №1
+--   Check:
+-- 6) Application App1 from Mobile №2 sends to SDL valid Show RPC request
+--   Check:
+--    SDL sends Show(resultCode = SUCCESS) response to Mobile №2
 ---------------------------------------------------------------------------------------------------
 --[[ Required Shared libraries ]]
 local runner = require('user_modules/script_runner')

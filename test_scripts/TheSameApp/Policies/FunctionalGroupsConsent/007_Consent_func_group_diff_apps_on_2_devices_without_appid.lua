@@ -1,35 +1,39 @@
 ---------------------------------------------------------------------------------------------------
 -- Proposal:
 -- https://github.com/smartdevicelink/sdl_evolution/blob/master/proposals/0204-same-app-from-multiple-devices.md
--- Description: User consent for functional groups without application specification
---    for two consented mobile devices
--- Precondition:
--- 1)SDL and HMI are started
--- 2)Mobile №1 and №2 are connected to SDL and are consented
--- 3)RPC Show exists only in Group001 according policies and requires user consent ConsentGroup001
--- 4)Application App1 is registered on Mobile №1 and Mobile №2 (two copies of one application)
---   Application App2 is registered on Mobile №1
--- In case:
--- 1)User allows ConsentGroup001 for all applications (HMI sends SDL.OnAppPermissionConsent without appId)
---   All applications (App1 and App2 on Mobile №1 and App1 on Mobile №1) send to SDL valid Show RPC request
--- 2)Register application App2 on Mobile №2
---   (it is application which had been already registered at moment of allowing of ConsentGroup001 but on other device)
---   Application App2 Mobile №2 sends to SDL valid Show RPC request
--- 3)Register application App3 on Mobile №2 (new application)
---   Application App3 Mobile №2 sends to SDL valid Show RPC request
--- 4)User disallows ConsentGroup001 for all applications (HMI sends SDL.OnAppPermissionConsent without appId)
---   All applications (App1 and App2 on Mobile №1 and App1 on Mobile №1) send to SDL valid Show RPC request
--- SDL does:
--- 1)Send Show(resultCode = SUCCESS) response to App1 on Mobile №1
---   Send Show(resultCode = SUCCESS) response to App1 on Mobile №2
---   Send Show(resultCode = SUCCESS) response to App2 on Mobile №1
--- 2)Send Show(resultCode = SUCCESS) response to App2 on Mobile №2
--- 3)Send Show(resultCode = SUCCESS) response to App3 on Mobile №2
--- 4)Send Show(resultCode = USER_DISALLOWED) response to App1 on Mobile №1
---   Send Show(resultCode = USER_DISALLOWED) response to App1 on Mobile №2
---   Send Show(resultCode = USER_DISALLOWED) response to App2 on Mobile №1
---   Send Show(resultCode = USER_DISALLOWED) response to App2 on Mobile №2
---   Send Show(resultCode = USER_DISALLOWED) response to App3 on Mobile №1
+-- Description: User consent for functional groups without application specification for two consented mobile devices
+--
+-- Preconditions:
+-- 1) SDL and HMI are started
+-- 2) Mobile №1 and №2 are connected to SDL and are consented
+-- 3) RPC Show exists only in Group001 according policies and requires user consent ConsentGroup001
+-- 4) Application App1 is registered on Mobile №1 and Mobile №2 (two copies of one application)
+--    Application App2 is registered on Mobile №1
+--
+-- Steps:
+-- 1) User allows ConsentGroup001 for all applications (HMI sends SDL.OnAppPermissionConsent without appId)
+-- All applications (App1 and App2 on Mobile №1 and App1 on Mobile №1) send to SDL valid Show RPC request
+--   Check:
+--    SDL sends Show(resultCode = SUCCESS) response to App1 on Mobile №1
+--    SDL sends Show(resultCode = SUCCESS) response to App1 on Mobile №2
+--    SDL sends Show(resultCode = SUCCESS) response to App2 on Mobile №1
+-- 2) Register application App2 on Mobile №2
+-- (another application with the same appName and appId on other device was registered before allowing ConsentGroup001)
+-- Application App2 Mobile №2 sends to SDL valid Show RPC request
+--   Check:
+--    SDL sends Show(resultCode = SUCCESS) response to App2 on Mobile №2
+-- 3) Register application App3 on Mobile №2 (new application)
+-- Application App3 Mobile №2 sends to SDL valid Show RPC request
+--   Check:
+--    SDL sends Show(resultCode = SUCCESS) response to App3 on Mobile №2
+-- 4) User disallows ConsentGroup001 for all applications (HMI sends SDL.OnAppPermissionConsent without appId)
+-- All applications (App1 and App2 on Mobile №1 and App1 on Mobile №1) send to SDL valid Show RPC request
+--   Check:
+--    SDL sends Show(resultCode = USER_DISALLOWED) response to App1 on Mobile №1
+--    SDL sends Show(resultCode = USER_DISALLOWED) response to App1 on Mobile №2
+--    SDL sends Show(resultCode = USER_DISALLOWED) response to App2 on Mobile №1
+--    SDL sends Show(resultCode = USER_DISALLOWED) response to App2 on Mobile №2
+--    SDL sends Show(resultCode = USER_DISALLOWED) response to App3 on Mobile №1
 ---------------------------------------------------------------------------------------------------
 --[[ Required Shared libraries ]]
 local runner = require('user_modules/script_runner')
@@ -154,10 +158,10 @@ runner.Step("Start SDL and HMI", common.start)
 runner.Step("Connect two mobile devices to SDL", common.connectMobDevices, {devices})
 runner.Step("Register App1 from device 1", common.registerAppEx, {1, appParams[1], 1})
 runner.Step("Register App2 from device 1", common.registerAppEx, {2, appParams[2], 1})
-runner.Step("Register App1 from device 1", common.registerAppEx, {3, appParams[1], 2})
+runner.Step("Register App1 from device 2", common.registerAppEx, {3, appParams[1], 2})
 
 runner.Title("Test")
-runner.Step("Allow group Group001 for all App", common.funcGroupConsentForApp,
+runner.Step("Allow group Group001 for all Apps", common.funcGroupConsentForApp,
     {{{name = "ConsentGroup001", allowed = true}}})
 runner.Step("Succeed Show from App1 from device 1", common.show, {1, "SUCCESS"})
 runner.Step("Succeed Show from App2 from device 1", common.show, {2, "SUCCESS"})
@@ -169,7 +173,7 @@ runner.Step("Succeed Show from App2 from device 2", common.show, {4, "SUCCESS"})
 runner.Step("Register App3 from device 2", common.registerAppEx, {5, appParams[3], 2})
 runner.Step("Succeed Show from App3 from device 2", common.show, {5, "SUCCESS"})
 
-runner.Step("Disallow group Group001 for all App", common.funcGroupConsentForApp,
+runner.Step("Disallow group Group001 for all Apps", common.funcGroupConsentForApp,
     {{{name = "ConsentGroup001", allowed = false}}})
 runner.Step("User disallowed Show from App1 from device 1", common.show, {1, "USER_DISALLOWED"})
 runner.Step("User disallowed Show from App2 from device 1", common.show, {2, "USER_DISALLOWED"})

@@ -1,31 +1,32 @@
 ---------------------------------------------------------------------------------------------------
---   Proposal:
+-- Proposal:
 -- https://github.com/smartdevicelink/sdl_evolution/blob/master/proposals/0204-same-app-from-multiple-devices.md
---   Description:
+-- Description:
 -- Check of sending RPC on different functional groups by two mobile applications having different appIDs
 -- and same appNames from different mobile devises.
---   Precondition:
--- 1) create new custom functional group TestGroup_1 which contains AddCommand RPC (FULL, BACKGROUND, LIMITED, NONE)
--- 2) set this group for application with appID = 1
--- 3) create new custom functional group TestGroup_2 which contains AddSubMenu RPC (FULL, BACKGROUND, LIMITED, NONE)
--- 4) set this group for application with appID = 2
+--
+-- Preconditions:
+-- 1) Create new custom functional group TestGroup_1 which contains AddCommand RPC (FULL, BACKGROUND, LIMITED, NONE)
+-- 2) Set this group for application with appID = 1
+-- 3) Create new custom functional group TestGroup_2 which contains AddSubMenu RPC (FULL, BACKGROUND, LIMITED, NONE)
+-- 4) Set this group for application with appID = 2
 -- 5) SDL and HMI are started
 -- 6) Mobile №1 and №2 are connected to SDL
 -- 7) Mobile №1 and №2 are registered successfully
 --
---   Steps:
+-- Steps:
 -- 1) Mobile №1 sent AddCommand RPC
---   CheckSDL:
---     resends AddCommand RPC to HMI for Mobile №1 app1
+--   Check:
+--    SDL resends AddCommand RPC to HMI for Mobile №1 app1
 -- 2) Mobile №2 sent AddCommand RPC
---   CheckSDL:
---     sends response RPC( resultCode = "DISALLOWED" ) to Mobile №2
+--   Check:
+--    SDL sends response RPC( resultCode = "DISALLOWED" ) to Mobile №2
 -- 2) Mobile №1 sent AddSubMenu RPC
---   CheckSDL:
---     sends response RPC( resultCode = "DISALLOWED" ) to Mobile №1
+--   Check:
+--    SDL sends response RPC( resultCode = "DISALLOWED" ) to Mobile №1
 -- 4) Mobile №2 sent AddSubMenu RPC
---   CheckSDL:
---     resends AddSubMenu RPC to HMI for Mobile №2 app2
+--   Check:
+--    SDL resends AddSubMenu RPC to HMI for Mobile №2 app2
 ---------------------------------------------------------------------------------------------------
 --[[ Required Shared libraries ]]
 local runner = require('user_modules/script_runner')
@@ -70,8 +71,10 @@ local function modificationOfPreloadedPT(pPolicyTable)
 end
 
 local function sendRPCPositive(pAppId, pPrefix, pRPCName, pRPCParams, pRequestParams)
+  local pReqParams
+  if not pRequestParams then pReqParams = pRPCParams end
   local cid = common.mobile.getSession(pAppId):SendRPC(pRPCName, pRPCParams)
-      common.hmi.getConnection():ExpectRequest(pPrefix..pRPCName, pRequestParams)
+      common.hmi.getConnection():ExpectRequest(pPrefix..pRPCName, pReqParams)
   :Do(function(_, data)
        common.hmi.getConnection():SendResponse(data.id, data.method, "SUCCESS", {})
       end)
@@ -94,7 +97,7 @@ runner.Step("Register App2 from device 2", common.registerAppEx, {2, appParams[2
 
 runner.Title("Test")
 runner.Step("App1 sends 'AddCommand' RPC from Mobile 1, SUCCESS",    sendRPCPositive,
-              { 1, "UI.", "AddCommand", addCommandParams, addCommandParams })
+              { 1, "UI.", "AddCommand", addCommandParams })
 runner.Step("App2 sends 'AddCommand' RPC from Mobile 2, DISALLOWED", sendRPCNegative,
               { 2, "AddCommand", addCommandParams })
 runner.Step("App1 sends 'AddSubMenu' RPC from Mobile 1, DISALLOWED", sendRPCNegative,
