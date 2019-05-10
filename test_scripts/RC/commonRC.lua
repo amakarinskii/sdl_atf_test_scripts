@@ -680,7 +680,7 @@ local rcRPCs = {
     end,
     hmiResponseParams = function(pAllowed)
       return {
-        allowed = pAllowed
+        allowed = {pAllowed}
       }
     end,
   },
