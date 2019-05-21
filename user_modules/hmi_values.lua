@@ -9,10 +9,38 @@ local module = { }
 -- than "false" they are set to "true" ]]
 function module.createButtonCapability(name, shortPressAvailable, longPressAvailable, upDownAvailable)
   return {
-    name = name,
-    shortPressAvailable = shortPressAvailable ~= false or false,
-    longPressAvailable = longPressAvailable ~= false or false,
-    upDownAvailable = upDownAvailable ~= false or false
+    {
+      name = name,
+      moduleInfo = {
+        moduleId = "B0A",
+        location = {
+          col = 0, row = 0, level = 0, colspan = 1, rowspan = 1, levelspan = 1
+        },
+        serviceArea = {
+          col = 0, row = 0, level = 0, colspan = 1, rowspan = 1, levelspan = 1
+        },
+        allowMultipleAccess = true
+      },
+      shortPressAvailable = shortPressAvailable ~= false or false,
+      longPressAvailable = longPressAvailable ~= false or false,
+      upDownAvailable = upDownAvailable ~= false or false
+    },
+    {
+      name = name,
+      moduleInfo = {
+        moduleId = "B0C",
+        location = {
+          col = 0, row = 0, level = 0, colspan = 1, rowspan = 1, levelspan = 1
+        },
+        serviceArea = {
+          col = 0, row = 0, level = 0, colspan = 1, rowspan = 1, levelspan = 1
+        },
+        allowMultipleAccess = true
+      },
+      shortPressAvailable = shortPressAvailable ~= false or false,
+      longPressAvailable = longPressAvailable ~= false or false,
+      upDownAvailable = upDownAvailable ~= false or false
+    }
   }
 end
 
@@ -330,112 +358,440 @@ function module.getDefaultHMITable()
       params = {
         remoteControlCapability = {
           climateControlCapabilities = {
-              {
-                moduleName = "Climate",
-                currentTemperatureAvailable = true,
-                fanSpeedAvailable = true,
-                desiredTemperatureAvailable = true,
-                acEnableAvailable = true,
-                acMaxEnableAvailable = true,
-                circulateAirEnableAvailable = true,
-                autoModeEnableAvailable = true,
-                dualModeEnableAvailable = true,
-                defrostZoneAvailable = true,
-                defrostZone = {
-                  "FRONT", "REAR", "ALL", "NONE"
+            {
+              moduleName = "Climate",
+              moduleInfo = {
+                moduleId = "C0A",
+                location = {
+                  col = 0, row = 0, level = 0, colspan = 1, rowspan = 1, levelspan = 1
                 },
-                ventilationModeAvailable = true,
-                ventilationMode = {
-                  "UPPER", "LOWER", "BOTH", "NONE"
+                serviceArea = {
+                  col = 0, row = 0, level = 0, colspan = 1, rowspan = 1, levelspan = 1
                 },
-                heatedSteeringWheelAvailable = true,
-                heatedWindshieldAvailable = true,
-                heatedRearWindowAvailable = true,
-                heatedMirrorsAvailable = true
-              }
+                allowMultipleAccess = true
+              },
+              currentTemperatureAvailable = true,
+              fanSpeedAvailable = true,
+              desiredTemperatureAvailable = true,
+              acEnableAvailable = true,
+              acMaxEnableAvailable = true,
+              circulateAirEnableAvailable = true,
+              autoModeEnableAvailable = true,
+              dualModeEnableAvailable = true,
+              defrostZoneAvailable = true,
+              defrostZone = {
+                "FRONT", "REAR", "ALL", "NONE"
+              },
+              ventilationModeAvailable = true,
+              ventilationMode = {
+                "UPPER", "LOWER", "BOTH", "NONE"
+              },
+              heatedSteeringWheelAvailable = true,
+              heatedWindshieldAvailable = true,
+              heatedRearWindowAvailable = true,
+              heatedMirrorsAvailable = true
             },
+            {
+              moduleName = "Climate",
+              moduleInfo = {
+                moduleId = "C0C",
+                location = {
+                  col = 2, row = 0, level = 0, colspan = 1, rowspan = 1, levelspan = 1
+                },
+                serviceArea = {
+                  col = 2, row = 0, level = 0, colspan = 1, rowspan = 1, levelspan = 1
+                },
+                allowMultipleAccess = true
+              },
+              currentTemperatureAvailable = true,
+              fanSpeedAvailable = true,
+              desiredTemperatureAvailable = true,
+              acEnableAvailable = true,
+              acMaxEnableAvailable = true,
+              circulateAirEnableAvailable = true,
+              autoModeEnableAvailable = true,
+              dualModeEnableAvailable = true,
+              defrostZoneAvailable = true,
+              defrostZone = {
+                "FRONT", "REAR", "ALL", "NONE"
+              },
+              ventilationModeAvailable = true,
+              ventilationMode = {
+                "UPPER", "LOWER", "BOTH", "NONE"
+              },
+              heatedSteeringWheelAvailable = true,
+              heatedWindshieldAvailable = true,
+              heatedRearWindowAvailable = true,
+              heatedMirrorsAvailable = true
+            },
+            {
+              moduleName = "Climate",
+              moduleInfo = {
+                moduleId = "C1A",
+                location = {
+                  col = 0, row = 1, level = 0, colspan = 1, rowspan = 1, levelspan = 1
+                },
+                serviceArea = {
+                  col = 0, row = 1, level = 0, colspan = 1, rowspan = 3, levelspan = 1
+                },
+                allowMultipleAccess = true
+              },
+              currentTemperatureAvailable = true,
+              fanSpeedAvailable = true,
+              desiredTemperatureAvailable = true,
+              acEnableAvailable = true,
+              acMaxEnableAvailable = true,
+              circulateAirEnableAvailable = true,
+              autoModeEnableAvailable = true,
+              dualModeEnableAvailable = true,
+              defrostZoneAvailable = true,
+              defrostZone = {
+                "FRONT", "REAR", "ALL", "NONE"
+              },
+              ventilationModeAvailable = true,
+              ventilationMode = {
+                "UPPER", "LOWER", "BOTH", "NONE"
+              },
+              heatedSteeringWheelAvailable = true,
+              heatedWindshieldAvailable = true,
+              heatedRearWindowAvailable = true,
+              heatedMirrorsAvailable = true
+            }
+          },
           radioControlCapabilities = {
-              {
-                moduleName = "Radio",
-                radioEnableAvailable = true,
-                radioBandAvailable = true,
-                radioFrequencyAvailable = true,
-                hdChannelAvailable = true,
-                rdsDataAvailable = true,
-                availableHDsAvailable = true,
-                stateAvailable = true,
-                signalStrengthAvailable = true,
-                signalChangeThresholdAvailable = true,
-                sisDataAvailable = true,
-                hdRadioEnableAvailable = true,
-                siriusxmRadioAvailable = true
-              }
-            },
+            {
+              moduleName = "Radio",
+              moduleInfo = {
+                moduleId = "R0A",
+                location = {
+                  col = 0, row = 0, level = 0, colspan = 1, rowspan = 1, levelspan = 1
+                },
+                serviceArea = {
+                  col = 0, row = 0, level = 0, colspan = 3, rowspan = 2, levelspan = 1
+                },
+                allowMultipleAccess = true
+              },
+              radioEnableAvailable = true,
+              radioBandAvailable = true,
+              radioFrequencyAvailable = true,
+              hdChannelAvailable = true,
+              rdsDataAvailable = true,
+              availableHDsAvailable = true,
+              stateAvailable = true,
+              signalStrengthAvailable = true,
+              signalChangeThresholdAvailable = true,
+              sisDataAvailable = true,
+              hdRadioEnableAvailable = true,
+              siriusxmRadioAvailable = true
+            }
+          },
           audioControlCapabilities = {
-              {
-                moduleName = "Audio",
-                sourceAvailable = true,
-                keepContextAvailable = true,
-                volumeAvailable = true,
-                equalizerAvailable = true,
-                equalizerMaxChannelId = 100
-              }
+            {
+              moduleName = "Audio",
+              moduleInfo = {
+                moduleId = "A0A",
+                location = {
+                  col = 0, row = 0, level = 0, colspan = 1, rowspan = 1, levelspan = 1
+                },
+                serviceArea = {
+                  col = 0, row = 0, level = 0, colspan = 1, rowspan = 1, levelspan = 1
+                },
+                allowMultipleAccess = true
+              },
+              sourceAvailable = true,
+              keepContextAvailable = true,
+              volumeAvailable = true,
+              equalizerAvailable = true,
+              equalizerMaxChannelId = 100
             },
-            seatControlCapabilities = {
-              {
-                moduleName = "Seat",
-                heatingEnabledAvailable = true,
-                coolingEnabledAvailable = true,
-                heatingLevelAvailable = true,
-                coolingLevelAvailable = true,
-                horizontalPositionAvailable = true,
-                verticalPositionAvailable = true,
-                frontVerticalPositionAvailable = true,
-                backVerticalPositionAvailable = true,
-                backTiltAngleAvailable = true,
-                headSupportHorizontalPositionAvailable = true,
-                headSupportVerticalPositionAvailable = true,
-                massageEnabledAvailable = true,
-                massageModeAvailable = true,
-                massageCushionFirmnessAvailable = true,
-                memoryAvailable = true
-              }
-           },
+            {
+              moduleName = "Audio",
+              moduleInfo = {
+                moduleId = "A0C",
+                location = {
+                  col = 2, row = 0, level = 0, colspan = 1, rowspan = 1, levelspan = 1
+                },
+                serviceArea = {
+                  col = 2, row = 0, level = 0, colspan = 1, rowspan = 1, levelspan = 1
+                },
+                allowMultipleAccess = true
+              },
+              sourceAvailable = true,
+              keepContextAvailable = true,
+              volumeAvailable = true,
+              equalizerAvailable = true,
+              equalizerMaxChannelId = 100
+            },
+            {
+              moduleName = "Audio",
+              moduleInfo = {
+                moduleId = "A1A",
+                location = {
+                  col = 0, row = 1, level = 0, colspan = 1, rowspan = 1, levelspan = 1
+                },
+                serviceArea = {
+                  col = 0, row = 1, level = 0, colspan = 1, rowspan = 1, levelspan = 1
+                },
+                allowMultipleAccess = true
+              },
+              sourceAvailable = true,
+              keepContextAvailable = true,
+              volumeAvailable = true,
+              equalizerAvailable = true,
+              equalizerMaxChannelId = 100
+            },
+            {
+              moduleName = "Audio",
+              moduleInfo = {
+                moduleId = "A1B",
+                location = {
+                  col = 1, row = 1, level = 0, colspan = 1, rowspan = 1, levelspan = 1
+                },
+                serviceArea = {
+                  col = 1, row = 1, level = 0, colspan = 1, rowspan = 1, levelspan = 1
+                },
+                allowMultipleAccess = true
+              },
+              sourceAvailable = true,
+              keepContextAvailable = true,
+              volumeAvailable = true,
+              equalizerAvailable = true,
+              equalizerMaxChannelId = 100
+            },
+            {
+              moduleName = "Audio",
+              moduleInfo = {
+                moduleId = "A1C",
+                location = {
+                  col = 2, row = 1, level = 0, colspan = 1, rowspan = 1, levelspan = 1
+                },
+                serviceArea = {
+                  col = 2, row = 1, level = 0, colspan = 1, rowspan = 1, levelspan = 1
+                },
+                allowMultipleAccess = true
+              },
+              sourceAvailable = true,
+              keepContextAvailable = true,
+              volumeAvailable = true,
+              equalizerAvailable = true,
+              equalizerMaxChannelId = 100
+            },
+            {
+              moduleName = "Audio",
+              moduleInfo = {
+                moduleId = "A0A+",        -- a position (NOT a SEAT) on the upper level
+                location = {
+                  col = 0, row = 0, level = 1, colspan = 1, rowspan = 1, levelspan = 1
+                },
+                serviceArea = {
+                  col = 0, row = 0, level = 1, colspan = 3, rowspan = 2, levelspan = 1
+                },
+                allowMultipleAccess = true
+              },
+              sourceAvailable = true,
+              keepContextAvailable = true,
+              volumeAvailable = true,
+              equalizerAvailable = true,
+              equalizerMaxChannelId = 100
+            }
+          },
+          seatControlCapabilities = {
+            {
+              moduleName = "Seat",
+              moduleInfo = {
+                moduleId = "S0A",
+                location = {
+                  col = 0, row = 0, level = 0, colspan = 1, rowspan = 1, levelspan = 1
+                },
+                serviceArea = {
+                  col = 0, row = 0, level = 0, colspan = 1, rowspan = 1, levelspan = 1
+                },
+                allowMultipleAccess = true
+              },
+              heatingEnabledAvailable = true,
+              coolingEnabledAvailable = true,
+              heatingLevelAvailable = true,
+              coolingLevelAvailable = true,
+              horizontalPositionAvailable = true,
+              verticalPositionAvailable = true,
+              frontVerticalPositionAvailable = true,
+              backVerticalPositionAvailable = true,
+              backTiltAngleAvailable = true,
+              headSupportHorizontalPositionAvailable = true,
+              headSupportVerticalPositionAvailable = true,
+              massageEnabledAvailable = true,
+              massageModeAvailable = true,
+              massageCushionFirmnessAvailable = true,
+              memoryAvailable = true
+            },
+            {
+              moduleName = "Seat",
+              moduleInfo = {
+                moduleId = "S0C",
+                location = {
+                  col = 2, row = 0, level = 0, colspan = 1, rowspan = 1, levelspan = 1
+                },
+                serviceArea = {
+                  col = 2, row = 0, level = 0, colspan = 1, rowspan = 1, levelspan = 1
+                },
+                allowMultipleAccess = true
+              },
+              heatingEnabledAvailable = true,
+              coolingEnabledAvailable = true,
+              heatingLevelAvailable = true,
+              coolingLevelAvailable = true,
+              horizontalPositionAvailable = true,
+              verticalPositionAvailable = true,
+              frontVerticalPositionAvailable = true,
+              backVerticalPositionAvailable = true,
+              backTiltAngleAvailable = true,
+              headSupportHorizontalPositionAvailable = true,
+              headSupportVerticalPositionAvailable = true,
+              massageEnabledAvailable = true,
+              massageModeAvailable = true,
+              massageCushionFirmnessAvailable = true,
+              memoryAvailable = true
+            },
+            {
+              moduleName = "Seat",
+              moduleInfo = {
+                moduleId = "S1A",
+                location = {
+                  col = 0, row = 1, level = 0, colspan = 1, rowspan = 1, levelspan = 1
+                },
+                serviceArea = {
+                  col = 0, row = 1, level = 0, colspan = 1, rowspan = 1, levelspan = 1
+                },
+                allowMultipleAccess = true
+              },
+              heatingEnabledAvailable = true,
+              coolingEnabledAvailable = true,
+              heatingLevelAvailable = true,
+              coolingLevelAvailable = true,
+              horizontalPositionAvailable = true,
+              verticalPositionAvailable = true,
+              frontVerticalPositionAvailable = true,
+              backVerticalPositionAvailable = true,
+              backTiltAngleAvailable = true,
+              headSupportHorizontalPositionAvailable = true,
+              headSupportVerticalPositionAvailable = true,
+              massageEnabledAvailable = true,
+              massageModeAvailable = true,
+              massageCushionFirmnessAvailable = true,
+              memoryAvailable = true
+            },
+            {
+              moduleName = "Seat",
+              moduleInfo = {
+                moduleId = "S1B",
+                location = {
+                  col = 1, row = 1, level = 0, colspan = 1, rowspan = 1, levelspan = 1
+                },
+                serviceArea = {
+                  col = 1, row = 1, level = 0, colspan = 1, rowspan = 1, levelspan = 1
+                },
+                allowMultipleAccess = true
+              },
+              heatingEnabledAvailable = true,
+              coolingEnabledAvailable = true,
+              heatingLevelAvailable = true,
+              coolingLevelAvailable = true,
+              horizontalPositionAvailable = true,
+              verticalPositionAvailable = true,
+              frontVerticalPositionAvailable = true,
+              backVerticalPositionAvailable = true,
+              backTiltAngleAvailable = true,
+              headSupportHorizontalPositionAvailable = true,
+              headSupportVerticalPositionAvailable = true,
+              massageEnabledAvailable = true,
+              massageModeAvailable = true,
+              massageCushionFirmnessAvailable = true,
+              memoryAvailable = true
+            },
+            {
+              moduleName = "Seat",
+              moduleInfo = {
+                moduleId = "S1C",
+                location = {
+                  col = 2, row = 1, level = 0, colspan = 1, rowspan = 1, levelspan = 1
+                },
+                serviceArea = {
+                  col = 2, row = 1, level = 0, colspan = 1, rowspan = 1, levelspan = 1
+                },
+                allowMultipleAccess = true
+              },
+              heatingEnabledAvailable = true,
+              coolingEnabledAvailable = true,
+              heatingLevelAvailable = true,
+              coolingLevelAvailable = true,
+              horizontalPositionAvailable = true,
+              verticalPositionAvailable = true,
+              frontVerticalPositionAvailable = true,
+              backVerticalPositionAvailable = true,
+              backTiltAngleAvailable = true,
+              headSupportHorizontalPositionAvailable = true,
+              headSupportVerticalPositionAvailable = true,
+              massageEnabledAvailable = true,
+              massageModeAvailable = true,
+              massageCushionFirmnessAvailable = true,
+              memoryAvailable = true
+            }
+          },
           hmiSettingsControlCapabilities = {
-              moduleName = "HmiSettings",
-              distanceUnitAvailable = true,
-              temperatureUnitAvailable = true,
-              displayModeUnitAvailable = true
+            moduleName = "HmiSettings",
+            moduleInfo = {
+              moduleId = "H0A",
+              location = {
+                col = 0, row = 0, level = 0, colspan = 1, rowspan = 1, levelspan = 1
+              },
+              serviceArea = {
+                col = 0, row = 0, level = 0, colspan = 3, rowspan = 2, levelspan = 1
+              },
+              allowMultipleAccess = true
             },
+            distanceUnitAvailable = true,
+            temperatureUnitAvailable = true,
+            displayModeUnitAvailable = true
+          },
           lightControlCapabilities = {
-              moduleName = "Light",
-              supportedLights = (function()
-                local lights = { "FRONT_LEFT_HIGH_BEAM", "FRONT_RIGHT_HIGH_BEAM", "FRONT_LEFT_LOW_BEAM",
-                  "FRONT_RIGHT_LOW_BEAM", "FRONT_LEFT_PARKING_LIGHT", "FRONT_RIGHT_PARKING_LIGHT",
-                  "FRONT_LEFT_FOG_LIGHT", "FRONT_RIGHT_FOG_LIGHT", "FRONT_LEFT_DAYTIME_RUNNING_LIGHT",
-                  "FRONT_RIGHT_DAYTIME_RUNNING_LIGHT", "FRONT_LEFT_TURN_LIGHT", "FRONT_RIGHT_TURN_LIGHT",
-                  "REAR_LEFT_FOG_LIGHT", "REAR_RIGHT_FOG_LIGHT", "REAR_LEFT_TAIL_LIGHT", "REAR_RIGHT_TAIL_LIGHT",
-                  "REAR_LEFT_BRAKE_LIGHT", "REAR_RIGHT_BRAKE_LIGHT", "REAR_LEFT_TURN_LIGHT", "REAR_RIGHT_TURN_LIGHT",
-                  "REAR_REGISTRATION_PLATE_LIGHT", "HIGH_BEAMS", "LOW_BEAMS", "FOG_LIGHTS", "RUNNING_LIGHTS",
-                  "PARKING_LIGHTS", "BRAKE_LIGHTS", "REAR_REVERSING_LIGHTS", "SIDE_MARKER_LIGHTS", "LEFT_TURN_LIGHTS",
-                  "RIGHT_TURN_LIGHTS", "HAZARD_LIGHTS", "AMBIENT_LIGHTS", "OVERHEAD_LIGHTS", "READING_LIGHTS",
-                  "TRUNK_LIGHTS", "EXTERIOR_FRONT_LIGHTS", "EXTERIOR_REAR_LIGHTS", "EXTERIOR_LEFT_LIGHTS",
-                  "EXTERIOR_RIGHT_LIGHTS", "REAR_CARGO_LIGHTS", "REAR_TRUCK_BED_LIGHTS", "REAR_TRAILER_LIGHTS",
-                  "LEFT_SPOT_LIGHTS", "RIGHT_SPOT_LIGHTS", "LEFT_PUDDLE_LIGHTS", "RIGHT_PUDDLE_LIGHTS",
-                  "EXTERIOR_ALL_LIGHTS" }
-              local out = { }
-              for _, name in pairs(lights) do
-                local item = {
-                  name = name,
-                  densityAvailable = true,
-                  statusAvailable = true,
-                  rgbColorSpaceAvailable = true
-                }
-                table.insert(out, item)
-              end
-              return out
-              end)()
+            moduleName = "Light",
+             moduleInfo = {
+              moduleId = "H0A",
+              location = {
+                col = 0, row = 0, level = 0, colspan = 1, rowspan = 1, levelspan = 1
+              },
+              serviceArea = {
+                col = 0, row = 0, level = 0, colspan = 3, rowspan = 2, levelspan = 1
+              },
+              allowMultipleAccess = true
             },
+            supportedLights = (function()
+              local lights = { "FRONT_LEFT_HIGH_BEAM", "FRONT_RIGHT_HIGH_BEAM", "FRONT_LEFT_LOW_BEAM",
+                "FRONT_RIGHT_LOW_BEAM", "FRONT_LEFT_PARKING_LIGHT", "FRONT_RIGHT_PARKING_LIGHT",
+                "FRONT_LEFT_FOG_LIGHT", "FRONT_RIGHT_FOG_LIGHT", "FRONT_LEFT_DAYTIME_RUNNING_LIGHT",
+                "FRONT_RIGHT_DAYTIME_RUNNING_LIGHT", "FRONT_LEFT_TURN_LIGHT", "FRONT_RIGHT_TURN_LIGHT",
+                "REAR_LEFT_FOG_LIGHT", "REAR_RIGHT_FOG_LIGHT", "REAR_LEFT_TAIL_LIGHT", "REAR_RIGHT_TAIL_LIGHT",
+                "REAR_LEFT_BRAKE_LIGHT", "REAR_RIGHT_BRAKE_LIGHT", "REAR_LEFT_TURN_LIGHT", "REAR_RIGHT_TURN_LIGHT",
+                "REAR_REGISTRATION_PLATE_LIGHT", "HIGH_BEAMS", "LOW_BEAMS", "FOG_LIGHTS", "RUNNING_LIGHTS",
+                "PARKING_LIGHTS", "BRAKE_LIGHTS", "REAR_REVERSING_LIGHTS", "SIDE_MARKER_LIGHTS", "LEFT_TURN_LIGHTS",
+                "RIGHT_TURN_LIGHTS", "HAZARD_LIGHTS", "AMBIENT_LIGHTS", "OVERHEAD_LIGHTS", "READING_LIGHTS",
+                "TRUNK_LIGHTS", "EXTERIOR_FRONT_LIGHTS", "EXTERIOR_REAR_LIGHTS", "EXTERIOR_LEFT_LIGHTS",
+                "EXTERIOR_RIGHT_LIGHTS", "REAR_CARGO_LIGHTS", "REAR_TRUCK_BED_LIGHTS", "REAR_TRAILER_LIGHTS",
+                "LEFT_SPOT_LIGHTS", "RIGHT_SPOT_LIGHTS", "LEFT_PUDDLE_LIGHTS", "RIGHT_PUDDLE_LIGHTS",
+                "EXTERIOR_ALL_LIGHTS" }
+            local out = { }
+            for _, name in pairs(lights) do
+              local item = {
+                name = name,
+                densityAvailable = true,
+                statusAvailable = true,
+                rgbColorSpaceAvailable = true
+              }
+              table.insert(out, item)
+            end
+            return out
+            end)()
+          },
           buttonCapabilities = (function()
             local buttons = {
               -- climate
@@ -450,6 +806,18 @@ function module.getDefaultHMITable()
             end
             return out
           end)()
+        },
+        seatLocationCapability = {
+          rows = 2,
+          columns = 3,
+          levels = 2,
+          seats = {
+            { col = 0, row = 0, level = 0, colspan = 1, rowspan = 1, levelspan = 1},
+            { col = 2, row = 0, level = 0, colspan = 1, rowspan = 1, levelspan = 1},
+            { col = 0, row = 1, level = 0, colspan = 1, rowspan = 1, levelspan = 1},
+            { col = 1, row = 1, level = 0, colspan = 1, rowspan = 1, levelspan = 1},
+            { col = 2, row = 1, level = 0, colspan = 1, rowspan = 1, levelspan = 1}
+          }
         }
       },
       mandatory = true,
