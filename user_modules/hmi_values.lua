@@ -359,7 +359,7 @@ function module.getDefaultHMITable()
         remoteControlCapability = {
           climateControlCapabilities = {
             {
-              moduleName = "Climate",
+              moduleName = "Climate Driver Seat",
               moduleInfo = {
                 moduleId = "C0A",
                 location = {
@@ -392,7 +392,7 @@ function module.getDefaultHMITable()
               heatedMirrorsAvailable = true
             },
             {
-              moduleName = "Climate",
+              moduleName = "Climate Front Passenger Seat",
               moduleInfo = {
                 moduleId = "C0C",
                 location = {
@@ -425,7 +425,7 @@ function module.getDefaultHMITable()
               heatedMirrorsAvailable = true
             },
             {
-              moduleName = "Climate",
+              moduleName = "Climate 2nd Raw",
               moduleInfo = {
                 moduleId = "C1A",
                 location = {
@@ -460,7 +460,7 @@ function module.getDefaultHMITable()
           },
           radioControlCapabilities = {
             {
-              moduleName = "Radio",
+              moduleName = "Radio Driver Seat",
               moduleInfo = {
                 moduleId = "R0A",
                 location = {
@@ -487,7 +487,7 @@ function module.getDefaultHMITable()
           },
           audioControlCapabilities = {
             {
-              moduleName = "Audio",
+              moduleName = "Audio Driver Seat",
               moduleInfo = {
                 moduleId = "A0A",
                 location = {
@@ -505,7 +505,7 @@ function module.getDefaultHMITable()
               equalizerMaxChannelId = 100
             },
             {
-              moduleName = "Audio",
+              moduleName = "Audio Front Passenger Seat",
               moduleInfo = {
                 moduleId = "A0C",
                 location = {
@@ -523,7 +523,7 @@ function module.getDefaultHMITable()
               equalizerMaxChannelId = 100
             },
             {
-              moduleName = "Audio",
+              moduleName = "Audio 2nd Raw Left Seat",
               moduleInfo = {
                 moduleId = "A1A",
                 location = {
@@ -541,7 +541,7 @@ function module.getDefaultHMITable()
               equalizerMaxChannelId = 100
             },
             {
-              moduleName = "Audio",
+              moduleName = "Audio 2nd Raw Middle Seat",
               moduleInfo = {
                 moduleId = "A1B",
                 location = {
@@ -559,7 +559,7 @@ function module.getDefaultHMITable()
               equalizerMaxChannelId = 100
             },
             {
-              moduleName = "Audio",
+              moduleName = "Audio 2nd Raw Right Seat",
               moduleInfo = {
                 moduleId = "A1C",
                 location = {
@@ -577,7 +577,7 @@ function module.getDefaultHMITable()
               equalizerMaxChannelId = 100
             },
             {
-              moduleName = "Audio",
+              moduleName = "Audio Upper Level Vehicle Interior",
               moduleInfo = {
                 moduleId = "A0A+",        -- a position (NOT a SEAT) on the upper level
                 location = {
@@ -597,7 +597,7 @@ function module.getDefaultHMITable()
           },
           seatControlCapabilities = {
             {
-              moduleName = "Seat",
+              moduleName = "Seat of Driver",
               moduleInfo = {
                 moduleId = "S0A",
                 location = {
@@ -625,7 +625,7 @@ function module.getDefaultHMITable()
               memoryAvailable = true
             },
             {
-              moduleName = "Seat",
+              moduleName = "Seat of Front Passenger",
               moduleInfo = {
                 moduleId = "S0C",
                 location = {
@@ -653,7 +653,7 @@ function module.getDefaultHMITable()
               memoryAvailable = true
             },
             {
-              moduleName = "Seat",
+              moduleName = "Seat of 2nd Raw Left Passenger",
               moduleInfo = {
                 moduleId = "S1A",
                 location = {
@@ -681,7 +681,7 @@ function module.getDefaultHMITable()
               memoryAvailable = true
             },
             {
-              moduleName = "Seat",
+              moduleName = "Seat of 2nd Raw Middle Passenger",
               moduleInfo = {
                 moduleId = "S1B",
                 location = {
@@ -709,7 +709,7 @@ function module.getDefaultHMITable()
               memoryAvailable = true
             },
             {
-              moduleName = "Seat",
+              moduleName = "Seat of 2nd Raw Right Passenger",
               moduleInfo = {
                 moduleId = "S1C",
                 location = {
@@ -738,7 +738,7 @@ function module.getDefaultHMITable()
             }
           },
           hmiSettingsControlCapabilities = {
-            moduleName = "HmiSettings",
+            moduleName = "HmiSettings Driver Seat",
             moduleInfo = {
               moduleId = "H0A",
               location = {
@@ -754,7 +754,7 @@ function module.getDefaultHMITable()
             displayModeUnitAvailable = true
           },
           lightControlCapabilities = {
-            moduleName = "Light",
+            moduleName = "Light Driver Seat",
              moduleInfo = {
               moduleId = "H0A",
               location = {
