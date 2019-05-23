@@ -24,56 +24,62 @@ common.tableToString = utils.tableToString  -- testing purposes
 runner.testSettings.isSelfIncluded = false
 
 --[[ Local Variables ]]
--- local capabilityParams = {}
--- for _, v in pairs(common.allModules) do capabilityParams[v] = common.DEFAULT end -- HMI has all posible RC capabilities
-
-local radioControlCapabilities = {
+local customModules = { "CLIMATE", }
+local climateControlCapabilities = {
   {
-    moduleName = "Radio",
+    moduleName = "Climate Driver Seat",
     moduleInfo = {
-      moduleId = "R0A",
-      location = {
-        col = 0, row = 0, level = 0, colspan = 1, rowspan = 1, levelspan = 1
-      },
-      serviceArea = {
-        col = 0, row = 0, level = 0, colspan = 3, rowspan = 2, levelspan = 1
-      },
-      allowMultipleAccess = true
+      moduleId = "C0A",
+        location    = { row = 0 },
+        serviceArea = { col = 0, row = 0 }
+    }
+  },
+  {
+    moduleName = "Climate Front Passenger Seat",
+    moduleInfo = {
+      moduleId = "C0C",
+        location    = { col = 2, row = 0 },
+        serviceArea = { col = 2, row = 0 }
+    }
+  },
+  {
+    moduleName = "Climate 2nd Raw",
+    moduleInfo = {
+      moduleId = "C1A",
+        location    = { col = 0, row = 1 },
+        serviceArea = { col = 0, row = 1 }
     }
   }
 }
+
 local capabilityParams = {
-  RADIO = radioControlCapabilities,
-  CLIMATE = common.DEFAULT,
+  CLIMATE = climateControlCapabilities
 }
 
 --[[ Local Functions ]]
 local function sendGetSystemCapability()
-  -- local rcCapabilities = hmiRcCapabilities.RC.GetCapabilities.params.remoteControlCapability
-  local rcCapabilities = common.getRcCapabilities()
-  print("rcCapabilities = ", common.tableToString(rcCapabilities["RADIO"]))
   local cid = common.getMobileSession():SendRPC("GetSystemCapability", { systemCapabilityType = "REMOTE_CONTROL" })
   common.getMobileSession():ExpectResponse(cid, {
-      success = true,
-      resultCode = "SUCCESS",
-      systemCapability = {
-        remoteControlCapability = {
-          climateControlCapabilities = rcCapabilities["CLIMATE"],
-          radioControlCapabilities = radioControlCapabilities,
-          audioControlCapabilities = nil,
-          hmiSettingsControlCapabilities = nil,
-          seatControlCapabilities = nil,
-          lightControlCapabilities = nil,
-          buttonCapabilities = nil
-        }
+    success = true,
+    resultCode = "SUCCESS",
+    systemCapability = {
+      remoteControlCapability = {
+        climateControlCapabilities = climateControlCapabilities,
+        radioControlCapabilities = nil,
+        audioControlCapabilities = nil,
+        hmiSettingsControlCapabilities = nil,
+        seatControlCapabilities = nil,
+        lightControlCapabilities = nil,
+        buttonCapabilities = nil
       }
-    })
+    }
+  })
 end
 
 --[[ Scenario ]]
 runner.Title("Preconditions")
 runner.Step("Backup HMI capabilities file", common.backupHMICapabilities)
-runner.Step("Update HMI capabilities file", common.updateDefaultCapabilities, { common.allModules })
+runner.Step("Update HMI capabilities file", common.updateDefaultCapabilities, { customModules })
 runner.Step("Clean environment", common.preconditions)
 runner.Step("Start SDL, HMI, connect Mobile, start Session", common.start, { capabilityParams })
 runner.Step("RAI", common.registerAppWOPTU)

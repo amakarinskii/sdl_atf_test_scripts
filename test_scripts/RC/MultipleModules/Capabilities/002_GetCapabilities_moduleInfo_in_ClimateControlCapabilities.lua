@@ -24,58 +24,72 @@ common.tableToString = utils.tableToString  -- testing purposes
 runner.testSettings.isSelfIncluded = false
 
 --[[ Local Variables ]]
--- local capabilityParams = {}
--- for _, v in pairs(common.allModules) do capabilityParams[v] = common.DEFAULT end -- HMI has all posible RC capabilities
-local tooLongString = "qwqqweweerrtetrerereregegggdfggfjhjghgfhfhgfhgfhgfhhhgfhhfhrrtrggfhfhgfhgfhgfhfhghrthrhthhdfghdfghfgh"
-local customModules = { "RADIO"--[[, "CLIMATE" --]]}
-local rcCapabilities = common.getRcCapabilities()
-
-local radioControlCapabilities = {
+local customModules = { "CLIMATE", "RADIO" }
+local climateControlCapabilities = {
   {
-    moduleName = "Radio",
+    moduleName = "Climate Driver Seat",
     moduleInfo = {
-      moduleId = tooLongString
-    },
-    radioEnableAvailable = true,
-    radioBandAvailable = true,
-    radioFrequencyAvailable = true,
-    hdChannelAvailable = true,
-    rdsDataAvailable = true,
-    availableHDsAvailable = true,
-    stateAvailable = true,
-    signalStrengthAvailable = true,
-    signalChangeThresholdAvailable = true,
-    sisDataAvailable = true,
-    hdRadioEnableAvailable = true,
-    siriusxmRadioAvailable = true
+      moduleId = "C0A",
+      location = {
+        col = 0, row = 0, level = 0, colspan = 1, rowspan = 1, levelspan = 1
+      },
+      serviceArea = {
+        col = 0, row = 0, level = 0, colspan = 1, rowspan = 1, levelspan = 1
+      },
+      allowMultipleAccess = true
+    }
+  },
+  {
+    moduleName = "Climate Front Passenger Seat",
+    moduleInfo = {
+      moduleId = "C0C",
+      location = {
+        col = 2, row = 0, level = 0, colspan = 1, rowspan = 1, levelspan = 1
+      },
+      serviceArea = {
+        col = 2, row = 0, level = 0, colspan = 1, rowspan = 1, levelspan = 1
+      },
+      allowMultipleAccess = true
+    }
+  },
+  {
+    moduleName = "Climate 2nd Raw",
+    moduleInfo = {
+      moduleId = "C1A",
+      location = {
+        col = 0, row = 1, level = 0, colspan = 1, rowspan = 1, levelspan = 1
+      },
+      serviceArea = {
+        col = 0, row = 1, level = 0, colspan = 1, rowspan = 3, levelspan = 1
+      },
+      allowMultipleAccess = true
+    }
   }
 }
--- local climateControlCapabilities = rcCapabilities["CLIMATE"]
-
 local capabilityParams = {
-  RADIO = radioControlCapabilities--,
-  -- CLIMATE = common.DEFAULT,
+  CLIMATE = climateControlCapabilities,
+  RADIO = nil,
+  BUTTONS = common.DEFAULT
 }
 
 --[[ Local Functions ]]
 local function sendGetSystemCapability()
-  -- print("rcCapabilities = ", common.tableToString(rcCapabilities["RADIO"]))
   local cid = common.getMobileSession():SendRPC("GetSystemCapability", { systemCapabilityType = "REMOTE_CONTROL" })
   common.getMobileSession():ExpectResponse(cid, {
-      success = true,
-      resultCode = "SUCCESS",
-      systemCapability = {
-        remoteControlCapability = {
---          climateControlCapabilities = climateControlCapabilities,
-          radioControlCapabilities = radioControlCapabilities,
-          audioControlCapabilities = nil,
-          hmiSettingsControlCapabilities = nil,
-          seatControlCapabilities = nil,
-          lightControlCapabilities = nil,
-          buttonCapabilities = nil
-        }
+    success = true,
+    resultCode = "SUCCESS",
+    systemCapability = {
+      remoteControlCapability = {
+        climateControlCapabilities = climateControlCapabilities,
+        radioControlCapabilities = nil,
+        audioControlCapabilities = nil,
+        hmiSettingsControlCapabilities = nil,
+        seatControlCapabilities = nil,
+        lightControlCapabilities = nil,
+        buttonCapabilities = nil
       }
-    })
+    }
+  })
 end
 
 --[[ Scenario ]]
@@ -88,7 +102,7 @@ runner.Step("RAI", common.registerAppWOPTU)
 runner.Step("Activate App", common.activateApp)
 
 runner.Title("Test")
-runner.Step("GetSystemCapability Positive Case", sendGetSystemCapability)
+runner.Step("GetSystemCapability Positive Case for CLIMATE", sendGetSystemCapability)
 
 runner.Title("Postconditions")
 runner.Step("Stop SDL", common.postconditions)

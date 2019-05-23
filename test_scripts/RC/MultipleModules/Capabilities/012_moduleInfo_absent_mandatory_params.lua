@@ -24,47 +24,59 @@ common.tableToString = utils.tableToString  -- testing purposes
 runner.testSettings.isSelfIncluded = false
 
 --[[ Local Variables ]]
--- local capabilityParams = {}
--- for _, v in pairs(common.allModules) do capabilityParams[v] = common.DEFAULT end -- HMI has all posible RC capabilities
-
+local climateControlCapabilities = {
+  {
+    moduleName = "Climate Driver Seat",
+    moduleInfo = {
+      location    = { col = 0, row = 0 },
+      serviceArea = { col = 0, row = 0 }
+    }
+  },
+  {
+    moduleName = "Climate Front Passenger Seat",
+    moduleInfo = {
+      moduleId = "C0C"
+    }
+  },
+  {
+    moduleName = "Climate 2nd Raw",
+    moduleInfo = {
+      location    = { col = 0, row = 1 },
+      serviceArea = { col = 0, row = 1 }
+    }
+  }
+}
 local radioControlCapabilities = {
   {
     moduleName = "Radio",
     moduleInfo = {
-      location = {
-        col = 0, row = 0, level = 0, colspan = 1, rowspan = 1, levelspan = 1
-      },
-      allowMultipleAccess = true
-    },
-    radioEnableAvailable = true,
-    radioBandAvailable = true
+      moduleId = "R0A"
+    }
   }
 }
 local capabilityParams = {
+  CLIMATE = climateControlCapabilities,
   RADIO = radioControlCapabilities
 }
 
 --[[ Local Functions ]]
 local function sendGetSystemCapability()
-  -- local rcCapabilities = hmiRcCapabilities.RC.GetCapabilities.params.remoteControlCapability
-  local rcCapabilities = common.getRcCapabilities()
-  print("rcCapabilities = ", common.tableToString(rcCapabilities["RADIO"]))
   local cid = common.getMobileSession():SendRPC("GetSystemCapability", { systemCapabilityType = "REMOTE_CONTROL" })
   common.getMobileSession():ExpectResponse(cid, {
-      success = true,
-      resultCode = "SUCCESS",
-      systemCapability = {
-        remoteControlCapability = {
-          climateControlCapabilities = nil,
-          radioControlCapabilities = radioControlCapabilities,
-          audioControlCapabilities = nil,
-          hmiSettingsControlCapabilities = nil,
-          seatControlCapabilities = nil,
-          lightControlCapabilities = nil,
-          buttonCapabilities = nil
-        }
+    success = true,
+    resultCode = "SUCCESS",
+    systemCapability = {
+      remoteControlCapability = {
+        climateControlCapabilities = nil,
+        radioControlCapabilities = nil,
+        audioControlCapabilities = nil,
+        hmiSettingsControlCapabilities = nil,
+        seatControlCapabilities = nil,
+        lightControlCapabilities = nil,
+        buttonCapabilities = nil
       }
-    })
+    }
+  })
 end
 
 --[[ Scenario ]]
