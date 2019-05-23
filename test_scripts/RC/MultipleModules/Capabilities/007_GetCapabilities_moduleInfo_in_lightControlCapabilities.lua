@@ -2,17 +2,19 @@
 -- Proposal:
 -- https://github.com/smartdevicelink/sdl_evolution/blob/master/proposals/0221-multiple-modules.md
 -- Description:
---  Mobile App receive all capabilities in response to its "GetSystemCapability" request
+--  Mobile App receive capabilities only for LIGHT module in response to
+--  "GetSystemCapability"(systemCapabilityType = "REMOTE_CONTROL") request
 --
 -- Preconditions:
 -- 1) SDL and HMI are started
--- 2) Mobile №1 is connected to SDL
--- 3) App1 sends is registered from Mobile №1
+-- 2) HMI sent only LIGHT module capabilities to SDL
+-- 3) Mobile is connected to SDL
+-- 4) App is registered and activated
 --
 -- Steps:
--- 1) App sends "GetSystemCapability" request ("REMOTE_CONTROL")
+-- 1) App sends "GetSystemCapability"("REMOTE_CONTROL") request
 --   Check:
---    SDL transfer RC capabilities to mobile
+--    SDL sends "GetSystemCapability" response with LIGHT module capabilities to mobile
 ---------------------------------------------------------------------------------------------------
 --[[ Required Shared libraries ]]
 local runner = require('user_modules/script_runner')
@@ -24,7 +26,7 @@ common.tableToString = utils.tableToString  -- testing purposes
 runner.testSettings.isSelfIncluded = false
 
 --[[ Local Variables ]]
-local customModules = { "LIGHT", "CLIMATE" }
+local customModules = { "LIGHT" }
 local lightControlCapabilities = {
   moduleName = "Light Driver Seat",
    moduleInfo = {
@@ -76,13 +78,7 @@ local function sendGetSystemCapability()
     resultCode = "SUCCESS",
     systemCapability = {
       remoteControlCapability = {
-        climateControlCapabilities = nil,
-        radioControlCapabilities = nil,
-        audioControlCapabilities = nil,
-        seatControlCapabilities = nil,
-        hmiSettingsControlCapabilities = nil,
-        lightControlCapabilities = lightControlCapabilities,
-        buttonCapabilities = nil
+        lightControlCapabilities = lightControlCapabilities
       }
     }
   })

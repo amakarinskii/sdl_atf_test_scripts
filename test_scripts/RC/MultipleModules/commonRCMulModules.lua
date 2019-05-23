@@ -1,7 +1,6 @@
 local commonRC = require('test_scripts/RC/commonRC')
 local actions = require("user_modules/sequences/actions")
 local hmi_values = require("user_modules/hmi_values")
-local utils = require("user_modules/utils") -- testing purposes
 
 local common = {}
 
@@ -29,6 +28,18 @@ function common.getRcCapabilities()
     return rcCapabilities
 end
 
+function common.getDefaultHmiCapabilitiesFromJson()
+  local HmiCapabilities_file = config.pathToSDL .. "/hmi_capabilities.json"
+  local f = assert(io.open(HmiCapabilities_file, "r"))
+  local fileContent = f:read("*all")
+      f:close()
+  local json = require("modules/json")
+  local jsonHmiCapabilities = json.decode(fileContent)
+
+  local defaultRemoteControlCapabilities = jsonHmiCapabilities.UI.systemCapabilities.remoteControlCapability
+  return defaultRemoteControlCapabilities
+end
+
 function common.backupHMICapabilities()
   commonRC.backupHMICapabilities()
 end
@@ -44,7 +55,7 @@ function common.updateDefaultCapabilities(pDisabledModuleTypes)
 end
 
 function common.preconditions()
-  commonRC.preconditions(isPreloadedUpdate, pCountOfRCApps)
+  commonRC.preconditions()
 end
 
 function common.getDefaultRcCapabilities()
@@ -64,16 +75,6 @@ function common.start(pRcCapabilities)
 	end
 	return actions.start(hmiCapabilities)
 end
-
--- local function restorePreloadedPT()
---   local preloadedFile = commonFunctions:read_parameter_from_smart_device_link_ini("PreloadedPT")
---   commonPreconditions:RestoreFile(preloadedFile)
--- end
-
--- function common.postconditions()
---   actions.postconditions()
---   restorePreloadedPT()
--- end
 
 function common.postconditions()
   commonRC.postconditions()
