@@ -2,7 +2,7 @@
 -- Proposal:
 -- https://github.com/smartdevicelink/sdl_evolution/blob/master/proposals/0221-multiple-modules.md
 -- Description:
---  Mobile App receive capabilities only for LIGHT module in response to
+--  Mobile App receives capabilities only for LIGHT module in response to
 --  "GetSystemCapability"(systemCapabilityType = "REMOTE_CONTROL") request
 --
 -- Preconditions:
@@ -29,15 +29,15 @@ runner.testSettings.isSelfIncluded = false
 local customModules = { "LIGHT" }
 local lightControlCapabilities = {
   moduleName = "Light Driver Seat",
-   moduleInfo = {
-    moduleId = "H0A",
-    location = {
-      col = 0, row = 0, level = 0, colspan = 1, rowspan = 1, levelspan = 1
-    },
-    serviceArea = {
-      col = 0, row = 0, level = 0, colspan = 3, rowspan = 2, levelspan = 1
-    },
-    allowMultipleAccess = true
+    moduleInfo = {
+      moduleId = "L0A",
+      location = {
+        col = 0, row = 0, level = 0, colspan = 1, rowspan = 1, levelspan = 1
+      },
+      serviceArea = {
+        col = 0, row = 0, level = 0, colspan = 3, rowspan = 2, levelspan = 1
+      },
+      allowMultipleAccess = true
   },
   supportedLights = (function()
     local lights = { "FRONT_LEFT_HIGH_BEAM", "FRONT_RIGHT_HIGH_BEAM", "FRONT_LEFT_LOW_BEAM",

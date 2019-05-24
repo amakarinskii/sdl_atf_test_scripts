@@ -2,17 +2,22 @@
 -- Proposal:
 -- https://github.com/smartdevicelink/sdl_evolution/blob/master/proposals/0221-multiple-modules.md
 -- Description:
---  Mobile App receive all capabilities in response to its "GetSystemCapability" request
+--  In case if SDL receives from HMI "GetCapabilities" response, where all modules capabilities contain "moduleInfo",
+-- which includes "location" and "serviceArea" parameters with only mandatory parameters, SDL should resend these
+-- capabilities in "GetSystemCapability" response to mobile
 --
 -- Preconditions:
 -- 1) SDL and HMI are started
--- 2) Mobile №1 is connected to SDL
--- 3) App1 sends is registered from Mobile №1
+-- 2) HMI sent all modules capabilities with "moduleInfo" containing "location" and "serviceArea" having only
+-- mandatory parameters to SDL
+-- 3) Mobile is connected to SDL
+-- 4) App is registered and activated
 --
 -- Steps:
 -- 1) App sends "GetSystemCapability" request ("REMOTE_CONTROL")
 --   Check:
---    SDL transfer RC capabilities to mobile
+--    SDL sends "GetSystemCapability" response with all modules RC capabilities containig "moduleInfo" with "location"
+-- and "serviceArea" having only mandatory parameters to mobile
 ---------------------------------------------------------------------------------------------------
 --[[ Required Shared libraries ]]
 local runner = require('user_modules/script_runner')
@@ -24,148 +29,148 @@ common.tableToString = utils.tableToString  -- testing purposes
 runner.testSettings.isSelfIncluded = false
 
 --[[ Local Variables ]]
-local climateControlCapabilities = {
+local customClimateCapabilities = {
   {
     moduleName = "Climate Driver Seat",
     moduleInfo = {
       moduleId = "C0A",
-        location    = { col = 0, row = 0 },
-        serviceArea = { col = 0, row = 0 }
+      location    = { col = 0, row = 0 },
+      serviceArea = { col = 0, row = 0 }
     }
   },
   {
     moduleName = "Climate Front Passenger Seat",
     moduleInfo = {
       moduleId = "C0C",
-        location    = { col = 2, row = 0 },
-        serviceArea = { col = 2, row = 0 }
+      location    = { col = 2, row = 0 },
+      serviceArea = { col = 2, row = 0 }
     }
   },
   {
     moduleName = "Climate 2nd Raw",
     moduleInfo = {
       moduleId = "C1A",
-        location    = { col = 0, row = 1 },
-        serviceArea = { col = 0, row = 1 }
+      location    = { col = 0, row = 1 },
+      serviceArea = { col = 0, row = 1 }
     }
   }
 }
-local radioControlCapabilities = {
+local customRadioCapabilities = {
   {
     moduleName = "Radio",
     moduleInfo = {
       moduleId = "R0A",
-        location    = { col = 0, row = 0 },
-        serviceArea = { col = 0, row = 0 }
+      location    = { col = 0, row = 0 },
+      serviceArea = { col = 0, row = 0 }
     }
   }
 }
-local audioControlCapabilities = {
+local customAudioCapabilities = {
   {
     moduleName = "Audio Driver Seat",
     moduleInfo = {
       moduleId = "A0A",
-        location    = { col = 0, row = 0 },
-        serviceArea = { col = 0, row = 0 }
+      location    = { col = 0, row = 0 },
+      serviceArea = { col = 0, row = 0 }
     }
   },
   {
     moduleName = "Audio Front Passenger Seat",
     moduleInfo = {
       moduleId = "A0C",
-        location    = { col = 2, row = 0 },
-        serviceArea = { col = 2, row = 0 }
+      location    = { col = 2, row = 0 },
+      serviceArea = { col = 2, row = 0 }
     }
   },
   {
     moduleName = "Audio 2nd Raw Left Seat",
     moduleInfo = {
       moduleId = "A1A",
-        location    = { col = 0, row = 1 },
-        serviceArea = { col = 0, row = 1 }
+      location    = { col = 0, row = 1 },
+      serviceArea = { col = 0, row = 1 }
     }
   },
   {
     moduleName = "Audio 2nd Raw Middle Seat",
     moduleInfo = {
       moduleId = "A1B",
-        location    = { col = 1, row = 1 },
-        serviceArea = { col = 1, row = 1 }
+      location    = { col = 1, row = 1 },
+      serviceArea = { col = 1, row = 1 }
     }
   },
   {
     moduleName = "Audio 2nd Raw Right Seat",
     moduleInfo = {
       moduleId = "A1C",
-        location    = { col = 2, row = 1 },
-        serviceArea = { col = 2, row = 1 }
+      location    = { col = 2, row = 1 },
+      serviceArea = { col = 2, row = 1 }
     }
   },
   {
     moduleName = "Audio Upper Level Vehicle Interior",
     moduleInfo = {
       moduleId = "A0A+",        -- a position (NOT a SEAT) on the upper level
-        location    = { col = 0, row = 0 },
-        serviceArea = { col = 0, row = 0 }
+      location    = { col = 0, row = 0 },
+      serviceArea = { col = 0, row = 0 }
     }
   }
 }
-local seatControlCapabilities = {
+local customSeatCapabilities = {
   {
     moduleName = "Seat of Driver",
     moduleInfo = {
       moduleId = "S0A",
-        location    = { col = 0, row = 0 },
-        serviceArea = { col = 0, row = 0 }
+      location    = { col = 0, row = 0 },
+      serviceArea = { col = 0, row = 0 }
     }
   },
   {
     moduleName = "Seat of Front Passenger",
     moduleInfo = {
       moduleId = "S0C",
-        location    = { col = 2, row = 0 },
-        serviceArea = { col = 2, row = 0 }
+      location    = { col = 2, row = 0 },
+      serviceArea = { col = 2, row = 0 }
     }
   },
   {
     moduleName = "Seat of 2nd Raw Left Passenger",
     moduleInfo = {
       moduleId = "S1A",
-        location    = { col = 0, row = 1 },
-        serviceArea = { col = 0, row = 1 }
+      location    = { col = 0, row = 1 },
+      serviceArea = { col = 0, row = 1 }
     }
   },
   {
     moduleName = "Seat of 2nd Raw Middle Passenger",
     moduleInfo = {
       moduleId = "S1B",
-        location    = { col = 1, row = 1 },
-        serviceArea = { col = 1, row = 1 }
+      location    = { col = 1, row = 1 },
+      serviceArea = { col = 1, row = 1 }
     }
   },
   {
     moduleName = "Seat of 2nd Raw Right Passenger",
     moduleInfo = {
       moduleId = "S1C",
-        location    = { col = 2, row = 1 },
-        serviceArea = { col = 2, row = 1 }
+      location    = { col = 2, row = 1 },
+      serviceArea = { col = 2, row = 1 }
     }
   }
 }
-local hmiSettingsControlCapabilities = {
+local customHmiSettingsCapabilities = {
   moduleName = "HmiSettings Driver Seat",
   moduleInfo = {
     moduleId = "H0A",
-        location    = { col = 0, row = 0 },
-        serviceArea = { col = 0, row = 0 }
+    location    = { col = 0, row = 0 },
+    serviceArea = { col = 0, row = 0 }
   }
 }
-local lightControlCapabilities = {
+local customLightCapabilities = {
   moduleName = "Light Driver Seat",
-   moduleInfo = {
-    moduleId = "H0A",
-        location    = { col = 0, row = 0 },
-        serviceArea = { col = 0, row = 0 }
+  moduleInfo = {
+    moduleId = "L0A",
+    location    = { col = 0, row = 0 },
+    serviceArea = { col = 0, row = 0 }
   },
   supportedLights = (function()
     local lights = { "FRONT_LEFT_HIGH_BEAM", "FRONT_RIGHT_HIGH_BEAM", "FRONT_LEFT_LOW_BEAM",
@@ -195,13 +200,19 @@ local lightControlCapabilities = {
   end)()
 }
 local capabilityParams = {
-  CLIMATE = common.DEFAULT,
-  RADIO = radioControlCapabilities,
-  AUDIO = audioControlCapabilities,
-  SEAT = seatControlCapabilities,
-  HMI_SETTINGS = hmiSettingsControlCapabilities,
-  LIGHT = lightControlCapabilities
+  CLIMATE      = customClimateCapabilities,
+  RADIO        = customRadioCapabilities,
+  AUDIO        = customAudioCapabilities,
+  SEAT         = customSeatCapabilities,
+  HMI_SETTINGS = customHmiSettingsCapabilities,
+  LIGHT        = customLightCapabilities
 }
+local defaultClimateCapabilities     = common.getDefaultHmiCapabilitiesFromJson().climateControlCapabilities
+local defaultRadioCapabilities       = common.getDefaultHmiCapabilitiesFromJson().radioControlCapabilities
+local defaultAudioCapabilities       = common.getDefaultHmiCapabilitiesFromJson().audioControlCapabilities
+local defaultSeatCapabilities        = common.getDefaultHmiCapabilitiesFromJson().seatControlCapabilities
+local defaultHmiSettingsCapabilities = common.getDefaultHmiCapabilitiesFromJson().hmiSettingsControlCapabilities
+local defaultLightCapabilities       = common.getDefaultHmiCapabilitiesFromJson().lightControlCapabilities
 
 --[[ Local Functions ]]
 local function sendGetSystemCapability()
@@ -211,13 +222,12 @@ local function sendGetSystemCapability()
     resultCode = "SUCCESS",
     systemCapability = {
       remoteControlCapability = {
-        climateControlCapabilities = climateControlCapabilities,
-        radioControlCapabilities = radioControlCapabilities,
-        audioControlCapabilities = audioControlCapabilities,
-        hmiSettingsControlCapabilities = hmiSettingsControlCapabilities,
-        seatControlCapabilities = seatControlCapabilities,
-        lightControlCapabilities = lightControlCapabilities,
-        buttonCapabilities = nil
+        climateControlCapabilities     = defaultClimateCapabilities,
+        radioControlCapabilities       = defaultRadioCapabilities,
+        audioControlCapabilities       = defaultAudioCapabilities,
+        hmiSettingsControlCapabilities = defaultSeatCapabilities,
+        seatControlCapabilities        = defaultHmiSettingsCapabilities,
+        lightControlCapabilities       = defaultLightCapabilities
       }
     }
   })
@@ -233,7 +243,7 @@ runner.Step("RAI", common.registerAppWOPTU)
 runner.Step("Activate App", common.activateApp)
 
 runner.Title("Test")
-runner.Step("GetSystemCapability Positive Case", sendGetSystemCapability)
+runner.Step("GetSystemCapability Mandatory only Grid parameters", sendGetSystemCapability)
 
 runner.Title("Postconditions")
 runner.Step("Stop SDL", common.postconditions)

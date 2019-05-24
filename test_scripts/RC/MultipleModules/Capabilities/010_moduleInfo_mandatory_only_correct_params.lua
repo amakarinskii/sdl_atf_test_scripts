@@ -2,8 +2,9 @@
 -- Proposal:
 -- https://github.com/smartdevicelink/sdl_evolution/blob/master/proposals/0221-multiple-modules.md
 -- Description:
---  Mobile App receive all capabilities in response to "GetSystemCapability", {systemCapabilityType = "REMOTE_CONTROL"}
--- request
+--  In case if SDL receives from HMI "GetCapabilities" response, where CLIMATE module capabilities contain
+-- "moduleInfo" with only mandatory parameters, SDL should resend these capabilities in "GetSystemCapability"
+-- response to mobile
 --
 -- Preconditions:
 -- 1) SDL and HMI are started
@@ -48,7 +49,7 @@ local climateControlCapabilities = {
 }
 local radioControlCapabilities = {
   {
-    moduleName = "Radio",
+    moduleName = "Radio Driver Seat",
     moduleInfo = {
       moduleId = "R0A"
     }
@@ -132,8 +133,8 @@ local hmiSettingsControlCapabilities = {
 }
 local lightControlCapabilities = {
   moduleName = "Light Driver Seat",
-   moduleInfo = {
-    moduleId = "H0A"
+  moduleInfo = {
+    moduleId = "L0A"
   },
   supportedLights = (function()
     local lights = { "FRONT_LEFT_HIGH_BEAM", "FRONT_RIGHT_HIGH_BEAM", "FRONT_LEFT_LOW_BEAM",
@@ -200,7 +201,7 @@ runner.Step("RAI", common.registerAppWOPTU)
 runner.Step("Activate App", common.activateApp)
 
 runner.Title("Test")
-runner.Step("GetSystemCapability Positive Case", sendGetSystemCapability)
+runner.Step("GetSystemCapability moduleInfo mandatory only parameters", sendGetSystemCapability)
 
 runner.Title("Postconditions")
 runner.Step("Stop SDL", common.postconditions)

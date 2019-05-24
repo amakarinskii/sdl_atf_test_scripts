@@ -2,17 +2,22 @@
 -- Proposal:
 -- https://github.com/smartdevicelink/sdl_evolution/blob/master/proposals/0221-multiple-modules.md
 -- Description:
---  Mobile App receive all capabilities in response to its "GetSystemCapability" request
+--  In case if SDL receives from HMI "GetCapabilities" response, where HMI_SETTINGS module capabilities contain
+-- "moduleInfo" with incorrect "serviceArea" mandatory parameter, SDL should send default HMI_SETTINGS module
+-- capabilities in "GetSystemCapability" response to mobile
 --
 -- Preconditions:
 -- 1) SDL and HMI are started
--- 2) Mobile №1 is connected to SDL
--- 3) App1 sends is registered from Mobile №1
+-- 2) HMI sent HMI_SETTINGS module capabilities with "moduleInfo" containing incorrect "location"  mandatory parameter
+--    to SDL
+-- 3) Mobile is connected to SDL
+-- 4) App is registered and activated
 --
 -- Steps:
 -- 1) App sends "GetSystemCapability" request ("REMOTE_CONTROL")
 --   Check:
---    SDL transfer RC capabilities to mobile
+--    SDL sends "GetSystemCapability" response with HMI_SETTINGS module capabilities containig "moduleInfo" with
+--    "location" and "serviceArea" having only mandatory parameters to mobile
 ---------------------------------------------------------------------------------------------------
 --[[ Required Shared libraries ]]
 local runner = require('user_modules/script_runner')
@@ -24,37 +29,19 @@ common.tableToString = utils.tableToString  -- testing purposes
 runner.testSettings.isSelfIncluded = false
 
 --[[ Local Variables ]]
-local customModules = { "CLIMATE", }
-local climateControlCapabilities = {
-  {
-    moduleName = "Climate Driver Seat",
-    moduleInfo = {
-      moduleId = "C0A",
-        location    = { col = "string", row = 0 },
-        serviceArea = { col = 0, row = 0 }
-    }
-  },
-  {
-    moduleName = "Climate Front Passenger Seat",
-    moduleInfo = {
-      moduleId = "C0C",
-        location    = { col = 2, row = 0 },
-        serviceArea = { col = 2, row = 0 }
-    }
-  },
-  {
-    moduleName = "Climate 2nd Raw",
-    moduleInfo = {
-      moduleId = "C1A",
-        location    = { col = 0, row = 1 },
-        serviceArea = { col = 0, row = 1 }
-    }
+local customModules = { "CLIMATE", "RADIO", "AUDIO", "SEAT", "LIGHT" }
+local customHmiSettingsCapabilities = {
+  moduleName = "HmiSettings Driver Seat",
+  moduleInfo = {
+    moduleId = "H0A",
+      location    = { col = 0,        row = 0 },
+      serviceArea = { col = "string", row = 0 },          --invalid value of "col"
   }
 }
-
 local capabilityParams = {
-  CLIMATE = climateControlCapabilities
+  HMI_SETTINGS = customHmiSettingsCapabilities
 }
+local defaultHmiSettingsCapabilities = common.getDefaultHmiCapabilitiesFromJson().hmiSettingsControlCapabilities
 
 --[[ Local Functions ]]
 local function sendGetSystemCapability()
@@ -64,13 +51,7 @@ local function sendGetSystemCapability()
     resultCode = "SUCCESS",
     systemCapability = {
       remoteControlCapability = {
-        climateControlCapabilities = climateControlCapabilities,
-        radioControlCapabilities = nil,
-        audioControlCapabilities = nil,
-        hmiSettingsControlCapabilities = nil,
-        seatControlCapabilities = nil,
-        lightControlCapabilities = nil,
-        buttonCapabilities = nil
+        hmiSettingsControlCapabilities = defaultHmiSettingsCapabilities
       }
     }
   })

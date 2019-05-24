@@ -2,7 +2,7 @@
 -- Proposal:
 -- https://github.com/smartdevicelink/sdl_evolution/blob/master/proposals/0221-multiple-modules.md
 -- Description:
---  Mobile App receive capabilities only for HMI_SETTINGS module in response to
+--  Mobile App receives capabilities only for HMI_SETTINGS module in response to
 --  "GetSystemCapability"(systemCapabilityType = "REMOTE_CONTROL") request
 --
 -- Preconditions:

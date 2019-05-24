@@ -2,7 +2,7 @@
 -- Proposal:
 -- https://github.com/smartdevicelink/sdl_evolution/blob/master/proposals/0221-multiple-modules.md
 -- Description:
---  Mobile App receive capabilities only for RADIO module in response to
+--  Mobile App receives capabilities only for RADIO module in response to
 --  "GetSystemCapability"(systemCapabilityType = "REMOTE_CONTROL") request
 --
 -- Preconditions:
@@ -29,7 +29,7 @@ runner.testSettings.isSelfIncluded = false
 local customModules = { "RADIO" }
 local radioControlCapabilities = {
   {
-    moduleName = "Radio",
+    moduleName = "Radio Driver Seat",
     moduleInfo = {
       moduleId = "R0A",
       location = {

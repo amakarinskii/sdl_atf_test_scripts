@@ -2,17 +2,21 @@
 -- Proposal:
 -- https://github.com/smartdevicelink/sdl_evolution/blob/master/proposals/0221-multiple-modules.md
 -- Description:
---  Mobile App receive all capabilities in response to its "GetSystemCapability" request
+--  In case if SDL receives from HMI "GetCapabilities" response, where LIGHT module capabilities contain
+-- "moduleInfo" with incorrect "location" mandatory parameter, SDL should send default LIGHT module capabilities
+-- in "GetSystemCapability" response to mobile
 --
 -- Preconditions:
 -- 1) SDL and HMI are started
--- 2) Mobile №1 is connected to SDL
--- 3) App1 sends is registered from Mobile №1
+-- 2) HMI sent LIGHT module capabilities with "moduleInfo" containing incorrect "location"  mandatory parameter to SDL
+-- 3) Mobile is connected to SDL
+-- 4) App is registered and activated
 --
 -- Steps:
 -- 1) App sends "GetSystemCapability" request ("REMOTE_CONTROL")
 --   Check:
---    SDL transfer RC capabilities to mobile
+--    SDL sends "GetSystemCapability" response with LIGHT module capabilities containig "moduleInfo" with "location"
+-- and "serviceArea" having only mandatory parameters to mobile
 ---------------------------------------------------------------------------------------------------
 --[[ Required Shared libraries ]]
 local runner = require('user_modules/script_runner')
@@ -24,37 +28,46 @@ common.tableToString = utils.tableToString  -- testing purposes
 runner.testSettings.isSelfIncluded = false
 
 --[[ Local Variables ]]
-local customModules = { "CLIMATE", }
-local climateControlCapabilities = {
-  {
-    moduleName = "Climate Driver Seat",
+local customModules = { "CLIMATE", "RADIO", "AUDIO", "SEAT", "HMI_SETTINGS" }
+local customLightCapabilities = {
+  moduleName = "Light Driver Seat",
     moduleInfo = {
-      moduleId = "C0A",
-        location    = { col = 0, row = 0 },
-        serviceArea = { col = "string", row = 0 }
-    }
+      moduleId = "L0A",
+      location    = { col = "string", row = 0 },          --invalid value of "col"
+      serviceArea = { col = 0,        row = 0 },
+      allowMultipleAccess = true
   },
-  {
-    moduleName = "Climate Front Passenger Seat",
-    moduleInfo = {
-      moduleId = "C0C",
-        location    = { col = 2, row = 0 },
-        serviceArea = { col = 2, row = 0 }
+  supportedLights = (function()
+    local lights = { "FRONT_LEFT_HIGH_BEAM", "FRONT_RIGHT_HIGH_BEAM", "FRONT_LEFT_LOW_BEAM",
+      "FRONT_RIGHT_LOW_BEAM", "FRONT_LEFT_PARKING_LIGHT", "FRONT_RIGHT_PARKING_LIGHT",
+      "FRONT_LEFT_FOG_LIGHT", "FRONT_RIGHT_FOG_LIGHT", "FRONT_LEFT_DAYTIME_RUNNING_LIGHT",
+      "FRONT_RIGHT_DAYTIME_RUNNING_LIGHT", "FRONT_LEFT_TURN_LIGHT", "FRONT_RIGHT_TURN_LIGHT",
+      "REAR_LEFT_FOG_LIGHT", "REAR_RIGHT_FOG_LIGHT", "REAR_LEFT_TAIL_LIGHT", "REAR_RIGHT_TAIL_LIGHT",
+      "REAR_LEFT_BRAKE_LIGHT", "REAR_RIGHT_BRAKE_LIGHT", "REAR_LEFT_TURN_LIGHT", "REAR_RIGHT_TURN_LIGHT",
+      "REAR_REGISTRATION_PLATE_LIGHT", "HIGH_BEAMS", "LOW_BEAMS", "FOG_LIGHTS", "RUNNING_LIGHTS",
+      "PARKING_LIGHTS", "BRAKE_LIGHTS", "REAR_REVERSING_LIGHTS", "SIDE_MARKER_LIGHTS", "LEFT_TURN_LIGHTS",
+      "RIGHT_TURN_LIGHTS", "HAZARD_LIGHTS", "AMBIENT_LIGHTS", "OVERHEAD_LIGHTS", "READING_LIGHTS",
+      "TRUNK_LIGHTS", "EXTERIOR_FRONT_LIGHTS", "EXTERIOR_REAR_LIGHTS", "EXTERIOR_LEFT_LIGHTS",
+      "EXTERIOR_RIGHT_LIGHTS", "REAR_CARGO_LIGHTS", "REAR_TRUCK_BED_LIGHTS", "REAR_TRAILER_LIGHTS",
+      "LEFT_SPOT_LIGHTS", "RIGHT_SPOT_LIGHTS", "LEFT_PUDDLE_LIGHTS", "RIGHT_PUDDLE_LIGHTS",
+      "EXTERIOR_ALL_LIGHTS" }
+  local out = { }
+  for _, name in pairs(lights) do
+    local item = {
+      name = name,
+      densityAvailable = true,
+      statusAvailable = true,
+      rgbColorSpaceAvailable = true
     }
-  },
-  {
-    moduleName = "Climate 2nd Raw",
-    moduleInfo = {
-      moduleId = "C1A",
-        location    = { col = 0, row = 1 },
-        serviceArea = { col = 0, row = 1 }
-    }
-  }
+    table.insert(out, item)
+  end
+  return out
+  end)()
 }
-
 local capabilityParams = {
-  CLIMATE = climateControlCapabilities
+  LIGHT = customLightCapabilities
 }
+local defaultLightCapabilities = common.getDefaultHmiCapabilitiesFromJson().lightControlCapabilities
 
 --[[ Local Functions ]]
 local function sendGetSystemCapability()
@@ -64,13 +77,7 @@ local function sendGetSystemCapability()
     resultCode = "SUCCESS",
     systemCapability = {
       remoteControlCapability = {
-        climateControlCapabilities = climateControlCapabilities,
-        radioControlCapabilities = nil,
-        audioControlCapabilities = nil,
-        hmiSettingsControlCapabilities = nil,
-        seatControlCapabilities = nil,
-        lightControlCapabilities = nil,
-        buttonCapabilities = nil
+        lightControlCapabilities = defaultLightCapabilities
       }
     }
   })
@@ -86,7 +93,7 @@ runner.Step("RAI", common.registerAppWOPTU)
 runner.Step("Activate App", common.activateApp)
 
 runner.Title("Test")
-runner.Step("GetSystemCapability Positive Case", sendGetSystemCapability)
+runner.Step("GetSystemCapability Incorrect Grid location parameter in LIGHT module", sendGetSystemCapability)
 
 runner.Title("Postconditions")
 runner.Step("Stop SDL", common.postconditions)

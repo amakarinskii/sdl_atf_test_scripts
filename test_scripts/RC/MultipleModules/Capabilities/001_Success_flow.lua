@@ -2,7 +2,7 @@
 -- Proposal:
 -- https://github.com/smartdevicelink/sdl_evolution/blob/master/proposals/0221-multiple-modules.md
 -- Description:
---  Mobile App receive all capabilities in response to "GetSystemCapability", {systemCapabilityType = "REMOTE_CONTROL"}
+--  Mobile App receives all capabilities in response to "GetSystemCapability", {systemCapabilityType = "REMOTE_CONTROL"}
 -- request
 --
 -- Preconditions:
